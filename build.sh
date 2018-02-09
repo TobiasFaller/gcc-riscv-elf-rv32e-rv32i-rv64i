@@ -1,4 +1,6 @@
 #!/bin/bash
+export __OPT_MULTICORE=-j4
+export __OPT_BOOTSTRAP=--enable-bootstrap
 export __OPT_TARGET_PATH=/usr/local/riscv32e
 export __OPT_TARGET_ARCH=riscv32-unknown-elf
 export __OPT_TARGET_MARCH=rv32e
@@ -18,13 +20,14 @@ mkdir build-binutils && cd build-binutils
 --target=${__OPT_TARGET_ARCH} \
 --prefix=${__OPT_TARGET_PATH} \
 --with-arch=${__OPT_TARGET_MARCH_FULL} \
+--enable-lto \
 --disable-nls --disable-wchar_t \
 --enable-initfini-array
-make all -j4
-make install -j4
+make all ${__OPT_MULTICORE}
+make install ${__OPT_MULTICORE}
 cd ..
 
-mv ./riscv-gcc/gcc/config/riscv/t-elf-multilib ./riscv-gcc/gcc/config/riscv/t-elf-multilib64
+mv ./riscv-gcc/gcc/config/riscv/t-elf-multilib ./riscv-gcc/gcc/config/riscv/t-elf-multilib64 | true
 ./riscv-gcc/gcc/config/riscv/multilib-generator \
   rv32e-ilp32e-- rv32ec-ilp32e-- rv32em-ilp32e-- rv32emc-ilp32e-- \
   rv32ema-ilp32e-- rv32emac-ilp32e-- rv32ea-ilp32e-- rv32eac-ilp32e-- \
@@ -35,13 +38,14 @@ mkdir build-gcc && cd build-gcc
 ../riscv-gcc/configure \
 --target=${__OPT_TARGET_ARCH} \
 --prefix=${__OPT_TARGET_PATH} \
+${__OPT_BOOTSTRAP} \
 --without-headers --enable-languages=c,c++ \
 --with-arch=${__OPT_TARGET_MARCH} --with-abi=${__OPT_TARGET_MABI} \
---enable-multilib \
+--enable-lto --enable-multilib \
 --disable-nls --disable-wchar_t --disable-threads --disable-libstdcxx \
 --enable-initfini-array
-make all-gcc -j4
-make install-gcc -j4
+make all-gcc ${__OPT_MULTICORE}
+make install-gcc ${__OPT_MULTICORE}
 cd ..
 
 mkdir build-newlib && cd build-newlib
@@ -53,8 +57,8 @@ mkdir build-newlib && cd build-newlib
 --disable-newlib-supplied-syscalls --enable-newlib-nano-malloc \
 --enable-newlib-global-atexit --enable-newlib-register-fini \
 --disable-newlib-multithread
-make all -j4
-make install -j4
+make all ${__OPT_MULTICORE}
+make install ${__OPT_MULTICORE}
 cd ..
 
 export CROSS_COMPILE=${__OPT_TARGET_ARCH}-
