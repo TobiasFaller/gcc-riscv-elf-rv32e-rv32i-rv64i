@@ -35,10 +35,9 @@ mkdir build-gcc && cd build-gcc
 ../riscv-gcc/configure \
 --target=${__OPT_TARGET_ARCH} \
 --prefix=${__OPT_TARGET_PATH} \
---without-headers --enable-languages=c \
+--without-headers --enable-languages=c,c++ \
 --with-arch=${__OPT_TARGET_MARCH} --with-abi=${__OPT_TARGET_MABI} \
 --enable-multilib \
---enable-c99 \
 --disable-nls --disable-wchar_t --disable-threads --disable-libstdcxx \
 --enable-initfini-array
 make all-gcc -j4
@@ -64,7 +63,7 @@ cd ..
 
 patch ./uclibc++/.config ./config.uclibc++.patch
 
-export CROSS_COMPILE=${__OPT_TARGET_ARCH}
+export CROSS_COMPILE=${__OPT_TARGET_ARCH}-
 export DESTDIR=${__OPT_TARGET_PATH}
 
 export HOSTCFLAGS="-mabi=${__OPT_TARGET_MABI} -march=${__OPT_TARGET_MARCH}"
