@@ -26,9 +26,9 @@ cd ..
 
 mv ./riscv-gcc/gcc/config/riscv/t-elf-multilib ./riscv-gcc/gcc/config/riscv/t-elf-multilib64
 ./riscv-gcc/gcc/config/riscv/multilib-generator \
-	rv32e-ilp32e-- rv32ec-ilp32e-- rv32em-ilp32e-- rv32emc-ilp32e-- \
-	rv32ema-ilp32e-- rv32emac-ilp32e-- rv32ea-ilp32e-- rv32eac-ilp32e-- \
-	> ./riscv-gcc/gcc/config/riscv/t-elf-multilib32
+  rv32e-ilp32e-- rv32ec-ilp32e-- rv32em-ilp32e-- rv32emc-ilp32e-- \
+  rv32ema-ilp32e-- rv32emac-ilp32e-- rv32ea-ilp32e-- rv32eac-ilp32e-- \
+  > ./riscv-gcc/gcc/config/riscv/t-elf-multilib32
 patch ./riscv-gcc/gcc/config.gcc ./config.gcc.patch
 
 mkdir build-gcc && cd build-gcc
@@ -57,35 +57,49 @@ make all -j4
 make install -j4
 cd ..
 
-cd uclibc++
-make defconfig
-cd ..
-
-patch ./uclibc++/.config ./config.uclibc++.patch
-
 export CROSS_COMPILE=${__OPT_TARGET_ARCH}-
-export DESTDIR=${__OPT_TARGET_PATH}
-
 export HOSTCFLAGS="-mabi=${__OPT_TARGET_MABI} -march=${__OPT_TARGET_MARCH}"
 export HOSTCXXFLAGS="-mabi=${__OPT_TARGET_MABI} -march=${__OPT_TARGET_MARCH}"
 
 cd uclibc++
+# Remove exception handling
+rm ./src/eh_globals.cpp | true
+rm ./src/eh_alloc.cpp | true
+rm ./include/unwind-cxx.h | true
+
+make defconfig
+patch ./.config ../config.uclibc++.patch
+
+# Patch destination path
+sed -i 's|UCLIBCXX_RUNTIME_PREFIX=""|UCLIBCXX_RUNTIME_PREFIX="'${__OPT_TARGET_PATH}'/'${__OPT_TARGET_ARCH}'"|' .config
+
 # Build default version
 make lib
 make install-include install-lib install-bin
-make clean
+make distclean
 
 # Build specific target architectures / ABIs
-for type in "rv32e/ilp32e rv32ec/ilp32e rv32em/ilp32e rv32emc/ilp32e rv32ema/ilp32e rv32ema/ilp32e rv32emac/ilp32e rv32ea/ilp32e rv32eac/ilp32e"; do
-	march=`echo $type | sed 's/\(.*\)\/\(.*\)$/\1/'`
-	mabi=`echo $type | sed 's/\(.*\)\/\(.*\)$/\2/'`
+types="rv32e/ilp32e rv32ec/ilp32e rv32em/ilp32e rv32emc/ilp32e rv32ema/ilp32e rv32ema/ilp32e rv32emac/ilp32e rv32ea/ilp32e rv32eac/ilp32e"
+for type in $types; do
+  march=`echo $type | sed 's/\(.*\)\/\(.*\)$/\1/'`
+  mabi=`echo $type | sed 's/\(.*\)\/\(.*\)$/\2/'`
 
-	sed -i 's/UCLIBCXX_RUNTIME_LIB_SUBDIR=".*"/UCLIBCXX_RUNTIME_LIB_SUBDIR="\/lib\/$march\/$mabi"/' .config
+  make defconfig
+  patch ./.config ../config.uclibc++.patch
 
-	export HOSTCFLAGS="-mabi=$mabi -march=$march"
-	export HOSTCXXFLAGS="-mabi=$mabi -march=$march"
-	make lib
-	make install-lib
-	make clean
+  sed -i 's|UCLIBCXX_RUNTIME_PREFIX=""|UCLIBCXX_RUNTIME_PREFIX="'${__OPT_TARGET_PATH}'/'${__OPT_TARGET_ARCH}'"|' .config
+  sed -i 's|UCLIBCXX_RUNTIME_LIB_SUBDIR=".*"|UCLIBCXX_RUNTIME_LIB_SUBDIR="/lib/'$march'/'$mabi'"|' .config
+
+  export HOSTCFLAGS="-mabi=$mabi -march=$march"
+  export HOSTCXXFLAGS="-mabi=$mabi -march=$march"
+  make lib
+  make install-lib
+  make distclean
 done;
 cd ..
+
+# Rename files to lower case
+orig_dir=`pwd`
+cd ${__OPT_TARGET_PATH}/${__OPT_TARGET_ARCH}/lib
+for file in `find . -name libuClibc++.a`; do mv $file `echo $file | tr [:upper:] [:lower:]`; done;
+cd $orig_dir
