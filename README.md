@@ -15,9 +15,10 @@ The following configuration was added for multi-lib:
 E: Base Integer Instruction Set
 
 Extensions:
-M: Integer Multiplication and Division
-A: Atomic Instructions
-C: Compressed Instructions
+
+- M: Integer Multiplication and Division
+- A: Atomic Instructions
+- C: Compressed Instructions
 
 Default target: rv32e/ilp32e
 
