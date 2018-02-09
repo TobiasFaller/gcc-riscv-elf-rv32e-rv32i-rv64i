@@ -1,5 +1,5 @@
---- J:\Projects\RiscV\riscv-tools\riscv-gnu-toolchain\riscv-gcc\gcc\config.gcc
-+++ J:\Snippets\Fixes\riscv32\gcc\config.gcc
+--- config.gcc
++++ config.gcc
 @@ -2032,10 +2036,14 @@
  	gcc_cv_initfini_array=yes
  	;;
