@@ -28,3 +28,5 @@ More information
 - [RISC-V Specifications](https://riscv.org/specifications/)
 - [RISC-V Tools](https://github.com/riscv/riscv-tools)
 - [RISC-V Toolchain](https://github.com/riscv/riscv-gnu-toolchain)
+
+This toolchain was not tested yet as I am currently waiting for the SPI flash memory to arrive from China.
