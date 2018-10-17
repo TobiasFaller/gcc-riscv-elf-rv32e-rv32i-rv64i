@@ -1,19 +1,26 @@
 #!/bin/bash
-export __OPT_MULTICORE=-j4
-export __OPT_BOOTSTRAP=--enable-bootstrap
-export __OPT_TARGET_PATH=/usr/local/riscv32e
-export __OPT_TARGET_ARCH=riscv32-unknown-elf
-export __OPT_TARGET_MARCH=rv32e
-export __OPT_TARGET_MARCH_FULL=rv32emac
-export __OPT_TARGET_MABI=ilp32e
+set -e
+
+__OPT_MULTICORE=-j4
+__OPT_BOOTSTRAP=--enable-bootstrap
+__OPT_TARGET_PATH=/usr/local/riscv32-unknown-elf
+__OPT_TARGET_ARCH=riscv32-unknown-elf
+__OPT_TARGET_MARCH=rv32i
+__OPT_TARGET_MARCH_FULL=rv32imafc
+__OPT_TARGET_MABI=ilp32
+__OPT_TARGET_MULTILIB="rv32e-ilp32e-- rv32ec-ilp32e-- rv32em-ilp32e-- rv32emc-ilp32e--
+  rv32ema-ilp32e-- rv32emac-ilp32e-- rv32ea-ilp32e-- rv32eac-ilp32e--
+  rv32i-ilp32-- rv32ic-ilp32-- rv32im-ilp32-- rv32imc-ilp32--
+  rv32ima-ilp32-- rv32imac-ilp32-- rv32ia-ilp32-- rv32iac-ilp32--
+  rv32if-ilp32-- rv32icf-ilp32-- rv32im-ilp32-- rv32imc-ilp32--
+  rv32imaf-ilp32-- rv32imafc-ilp32-- rv32iaf-ilp32-- rv32iafc-ilp32--"
 
 export PATH=$PATH:${__OPT_TARGET_PATH}/bin
 
-git config --global core.autocrlf input
-git clone --depth=1 --branch=riscv-next https://github.com/riscv/riscv-binutils-gdb.git riscv-binutils
-git clone --depth=1 --branch=riscv-next https://github.com/riscv/riscv-gcc.git riscv-gcc
-git clone --depth=1 --branch=riscv-newlib-next https://github.com/riscv/riscv-newlib.git riscv-newlib
-git clone --depth=1 --branch=master git://git.busybox.net/uClibc++ uclibc++
+git clone --config core.autocrlf=input --depth=1 --branch=riscv-next https://github.com/riscv/riscv-binutils-gdb.git riscv-binutils
+git clone --config core.autocrlf=input --depth=1 --branch=riscv-next https://github.com/riscv/riscv-gcc.git riscv-gcc
+git clone --config core.autocrlf=input --depth=1 --branch=riscv-newlib-next https://github.com/riscv/riscv-newlib.git riscv-newlib
+git clone --config core.autocrlf=input --depth=1 --branch=master git://git.busybox.net/uClibc++ uclibc++
 
 mkdir build-binutils && cd build-binutils
 ../riscv-binutils/configure \
@@ -28,9 +35,7 @@ make install ${__OPT_MULTICORE}
 cd ..
 
 mv ./riscv-gcc/gcc/config/riscv/t-elf-multilib ./riscv-gcc/gcc/config/riscv/t-elf-multilib64 | true
-./riscv-gcc/gcc/config/riscv/multilib-generator \
-  rv32e-ilp32e-- rv32ec-ilp32e-- rv32em-ilp32e-- rv32emc-ilp32e-- \
-  rv32ema-ilp32e-- rv32emac-ilp32e-- rv32ea-ilp32e-- rv32eac-ilp32e-- \
+./riscv-gcc/gcc/config/riscv/multilib-generator ${__OPT_TARGET_MULTILIB} \
   > ./riscv-gcc/gcc/config/riscv/t-elf-multilib32
 patch ./riscv-gcc/gcc/config.gcc ./config.gcc.patch
 
@@ -83,10 +88,9 @@ make install-include install-lib install-bin
 make distclean
 
 # Build specific target architectures / ABIs
-types="rv32e/ilp32e rv32ec/ilp32e rv32em/ilp32e rv32emc/ilp32e rv32ema/ilp32e rv32ema/ilp32e rv32emac/ilp32e rv32ea/ilp32e rv32eac/ilp32e"
-for type in $types; do
-  march=`echo $type | sed 's/\(.*\)\/\(.*\)$/\1/'`
-  mabi=`echo $type | sed 's/\(.*\)\/\(.*\)$/\2/'`
+for type in ${__OPT_TARGET_MULTILIB}; do
+  march=`echo $type | sed 's/\(.*\)-\(.*\)--/\1/'`
+  mabi=`echo $type | sed 's/\(.*\)-\(.*\)--/\2/'`
 
   make defconfig
   patch ./.config ../config.uclibc++.patch
