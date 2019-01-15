@@ -16,9 +16,21 @@ __OPT_TARGET_MULTILIB="rv32e-ilp32e-- rv32ec-ilp32e-- rv32em-ilp32e-- rv32emc-il
   rv32if-ilp32-- rv32icf-ilp32-- rv32im-ilp32-- rv32imc-ilp32--
   rv32imaf-ilp32-- rv32imafc-ilp32-- rv32iaf-ilp32-- rv32iafc-ilp32--"
 
-__ROOT_DIR=`pwd`
-
 export PATH=$PATH:${__OPT_TARGET_PATH}/bin
+
+# ----------------------------------------------------------------------------
+# installation
+# ----------------------------------------------------------------------------
+
+sudo apt install -y build-essential flex bison texinfo
+sudo apt install -y linux-headers-amd64
+sudo apt install -y libgmp-dev libgmp10
+sudo apt install -y libmpfr-dev libmpfr4
+sudo apt install -y libmpc-dev libmpc3
+
+# ----------------------------------------------------------------------------
+# sources
+# ----------------------------------------------------------------------------
 
 function git_checkout() {
   directory=$1
@@ -29,16 +41,11 @@ function git_checkout() {
   || git clone --config core.autocrlf=input --depth=1 --branch=$branch $repository $directory
 }
 
+__ROOT_DIR=`pwd`
 git_checkout 'riscv-binutils' 'riscv-next' 'https://github.com/riscv/riscv-binutils-gdb.git'
 git_checkout 'riscv-gcc' 'riscv-next' 'https://github.com/riscv/riscv-gcc.git'
 git_checkout 'riscv-newlib' 'riscv-newlib-next' 'https://github.com/riscv/riscv-newlib.git'
 git_checkout 'riscv-uclibc++' 'master' 'git://git.busybox.net/uClibc++'
-
-# ----------------------------------------------------------------------------
-# installation
-# ----------------------------------------------------------------------------
-
-sudo apt install -y build-essential texinfo
 
 # ----------------------------------------------------------------------------
 # binutils
