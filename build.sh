@@ -20,14 +20,25 @@ __ROOT_DIR=`pwd`
 
 export PATH=$PATH:${__OPT_TARGET_PATH}/bin
 
-(cd riscv-binutils && git pull origin master) \
-  || git clone --config core.autocrlf=input --depth=1 --branch=riscv-next https://github.com/riscv/riscv-binutils-gdb.git riscv-binutils
-(cd riscv-gcc && git pull origin master) \
-  || git clone --config core.autocrlf=input --depth=1 --branch=riscv-next https://github.com/riscv/riscv-gcc.git riscv-gcc
-(cd riscv-newlib && git pull origin master) \
-  || git clone --config core.autocrlf=input --depth=1 --branch=riscv-newlib-next https://github.com/riscv/riscv-newlib.git riscv-newlib
-(cd riscv-uclibc++ && git pull origin master) \
-  || git clone --config core.autocrlf=input --depth=1 --branch=master git://git.busybox.net/uClibc++ riscv-uclibc++
+function git_checkout() {
+  directory=$1
+  branch=$2
+  repository=$3
+
+  (cd $directory && git pull origin $branch && git reset --hard HEAD && git clean -dfx) \
+  || git clone --config core.autocrlf=input --depth=1 --branch=$branch $repository $directory
+}
+
+git_checkout 'riscv-binutils' 'riscv-next' 'https://github.com/riscv/riscv-binutils-gdb.git'
+git_checkout 'riscv-gcc' 'riscv-next' 'https://github.com/riscv/riscv-gcc.git'
+git_checkout 'riscv-newlib' 'riscv-newlib-next' 'https://github.com/riscv/riscv-newlib.git'
+git_checkout 'riscv-uclibc++' 'master' 'git://git.busybox.net/uClibc++'
+
+# ----------------------------------------------------------------------------
+# installation
+# ----------------------------------------------------------------------------
+
+sudo apt install -y build-essential texinfo
 
 # ----------------------------------------------------------------------------
 # binutils
@@ -35,7 +46,7 @@ export PATH=$PATH:${__OPT_TARGET_PATH}/bin
 
 cd $__ROOT_DIR
 if [ ! -d built-binutils ]; then
-  rm -r build-binutils || true
+  rm -rf build-binutils || true
   mkdir build-binutils && cd build-binutils
   ../riscv-binutils/configure \
     --target=${__OPT_TARGET_ARCH} \
@@ -63,7 +74,7 @@ if [ ! -d built-gcc ]; then
     patch ./riscv-gcc/gcc/config.gcc ./config.gcc.patch
   fi
 
-  rm -r build-gcc || true
+  rm -rf build-gcc || true
   mkdir build-gcc && cd build-gcc
   ../riscv-gcc/configure \
     --target=${__OPT_TARGET_ARCH} \
@@ -86,7 +97,7 @@ mkdir $__ROOT_DIR/built-gcc | true
 
 cd $__ROOT_DIR
 if [ ! -d checked-gcc ]; then
-  rm -r check-gcc || true
+  rm -rf check-gcc || true
   mkdir check-gcc && cd check-gcc
 
   cat >start.s <<EOF
@@ -110,7 +121,7 @@ mkdir $__ROOT_DIR/checked-gcc | true
 
 cd $__ROOT_DIR
 if [ ! -d built-newlib ]; then
-  rm -r build-newlib || true
+  rm -rf build-newlib || true
   mkdir build-newlib && cd build-newlib
   ../riscv-newlib/configure \
     --target=${__OPT_TARGET_ARCH} \
@@ -137,6 +148,7 @@ function build_uclibcpp() {
   done
   alias make="$MAKE_PARAMS make"
 
+  make distclean
   make defconfig
   patch ./.config ../config.uclibc++.patch
 
@@ -162,13 +174,13 @@ if [ ! -d built-uclibc++ ]; then
   rm ./include/unwind-cxx.h | true
 
   # Build default version
-  build_uclibcpp('', '')
+  build_uclibcpp '' ''
 
   # Build specific target architectures / ABIs
   for type in ${__OPT_TARGET_MULTILIB}; do
     march=`echo $type | sed 's/\(.*\)-\(.*\)--/\1/'`
     mabi=`echo $type | sed 's/\(.*\)-\(.*\)--/\2/'`
-    build_uclibcpp($march, $mabi)
+    build_uclibcpp $march $mabi
   done;
 
   # Rename files to lower case
