@@ -163,7 +163,7 @@ if [ ! -f .built-gcc ]; then
     --enable-lto --enable-multilib --enable-initfini-array \
     --disable-nls --disable-wchar_t --disable-threads --disable-libstdcxx \
     --disable-shared --disable-libssp \
-    --with-system-zlib --without-gcov --with-gnu-as --with-gnu-ld
+    --with-system-zlib --with-gnu-as --with-gnu-ld
 
   make all-gcc ${__OPT_MULTICORE}
   make install-gcc ${__OPT_MULTICORE}
@@ -249,7 +249,7 @@ if [ ! -f .built-gcc-stage2 ]; then
     --enable-lto --enable-multilib --enable-initfini-array \
     --disable-nls --disable-wchar_t --disable-threads --disable-libstdcxx \
     --disable-shared --disable-libssp \
-    --with-system-zlib --without-gcov --with-gnu-as --with-gnu-ld
+    --with-system-zlib --with-gnu-as --with-gnu-ld
 
   make all ${__OPT_MULTICORE}
   make install ${__OPT_MULTICORE}
