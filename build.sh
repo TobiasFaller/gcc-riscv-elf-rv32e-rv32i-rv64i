@@ -55,20 +55,20 @@ __OPT_TARGET_MULTILIB+="
 fi
 if [ "yes" == $__OPT_TARGET_ENABLE_RISCV64I ]; then
 __OPT_TARGET_MULTILIB+="
-  rv64i-ilp64-- rv64ic-ilp64--
-  rv64im-ilp64-- rv64imc-ilp64--
-  rv64ia-ilp64-- rv64iac-ilp64--
-  rv64ima-ilp64-- rv64imac-ilp64--
+  rv64i-lp64-- rv64ic-lp64--
+  rv64im-lp64-- rv64imc-lp64--
+  rv64ia-lp64-- rv64iac-lp64--
+  rv64ima-lp64-- rv64imac-lp64--
 
-  rv64if-ilp64f-- rv64ifc-ilp64f--
-  rv64imf-ilp64f-- rv64imfc-ilp64f--
-  rv64iaf-ilp64f-- rv64iafc-ilp64f--
-  rv64imaf-ilp64f-- rv64imafc-ilp64f--
+  rv64if-lp64f-- rv64ifc-lp64f--
+  rv64imf-lp64f-- rv64imfc-lp64f--
+  rv64iaf-lp64f-- rv64iafc-lp64f--
+  rv64imaf-lp64f-- rv64imafc-lp64f--
 
-  rv64ifd-ilp64d-- rv64ifdc-ilp64d--
-  rv64imfd-ilp64d-- rv64imfdc-ilp64d--
-  rv64iafd-ilp64d-- rv64iafdc-ilp64d--
-  rv64g-ilp64d-- rv64gc-ilp64d--"
+  rv64ifd-lp64d-- rv64ifdc-lp64d--
+  rv64imfd-lp64d-- rv64imfdc-lp64d--
+  rv64iafd-lp64d-- rv64iafdc-lp64d--
+  rv64g-lp64d-- rv64gc-lp64d--"
 fi
 
 export PATH=$PATH:${__OPT_TARGET_PATH}/bin
