@@ -133,8 +133,23 @@ if [ ! -f .built-binutils ]; then
     --program-prefix=${__OPT_TARGET_PREFIX} \
     --enable-lto --disable-nls --disable-wchar_t \
     --enable-initfini-array --without-gdb
-  make all ${__OPT_MULTICORE}
+
+  # Currently a little bit buggy, so repeat
+  # Bug in WSL: "Fixed an issue where multithreaded operations could return ENOENT even though the file exists. [GH 2712]"
+  # https://docs.microsoft.com/en-us/windows/wsl/release-notes#build-17655-skip-ahead
+  set +e
+  make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE}
   make install ${__OPT_MULTICORE}
+  set -e
 fi
 touch $__ROOT_DIR/.built-binutils
 
@@ -163,8 +178,23 @@ if [ ! -f .built-gcc ]; then
     --disable-nls --disable-wchar_t --disable-threads --disable-libstdcxx \
     --disable-shared --disable-libssp \
     --with-system-zlib --without-gcov --with-gnu-as --with-gnu-ld
-  make all-gcc ${__OPT_MULTICORE}
+
+  # Currently a little bit buggy, so repeat
+  # Bug in WSL: "Fixed an issue where multithreaded operations could return ENOENT even though the file exists. [GH 2712]"
+  # https://docs.microsoft.com/en-us/windows/wsl/release-notes#build-17655-skip-ahead
+  set +e
+  make all-gcc ${__OPT_MULTICORE} \
+    || make all-gcc ${__OPT_MULTICORE} \
+    || make all-gcc ${__OPT_MULTICORE} \
+    || make all-gcc ${__OPT_MULTICORE} \
+    || make all-gcc ${__OPT_MULTICORE} \
+    || make all-gcc ${__OPT_MULTICORE} \
+    || make all-gcc ${__OPT_MULTICORE} \
+    || make all-gcc ${__OPT_MULTICORE} \
+    || make all-gcc ${__OPT_MULTICORE} \
+    || make all-gcc ${__OPT_MULTICORE}
   make install-gcc ${__OPT_MULTICORE}
+  set -e
 fi
 touch $__ROOT_DIR/.built-gcc
 
@@ -219,6 +249,8 @@ if [ ! -f .built-newlib ]; then
     --disable-newlib-multithread
 
   # Currently a little bit buggy, so repeat
+  # Bug in WSL: "Fixed an issue where multithreaded operations could return ENOENT even though the file exists. [GH 2712]"
+  # https://docs.microsoft.com/en-us/windows/wsl/release-notes#build-17655-skip-ahead
   set +e
   make all ${__OPT_MULTICORE} \
     || make all ${__OPT_MULTICORE} \
@@ -229,7 +261,7 @@ if [ ! -f .built-newlib ]; then
     || make all ${__OPT_MULTICORE} \
     || make all ${__OPT_MULTICORE} \
     || make all ${__OPT_MULTICORE} \
-    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE}
   make install ${__OPT_MULTICORE}
   set -e
 fi
@@ -260,8 +292,23 @@ if [ ! -f .built-gcc-stage2 ]; then
     --disable-nls --disable-wchar_t --disable-threads --disable-libstdcxx \
     --disable-shared --disable-libssp \
     --with-system-zlib --without-gcov --with-gnu-as --with-gnu-ld
-  make all ${__OPT_MULTICORE}
+
+  # Currently a little bit buggy, so repeat
+  # Bug in WSL: "Fixed an issue where multithreaded operations could return ENOENT even though the file exists. [GH 2712]"
+  # https://docs.microsoft.com/en-us/windows/wsl/release-notes#build-17655-skip-ahead
+  set +e
+  make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE}
   make install ${__OPT_MULTICORE}
+  set -e
 fi
 touch $__ROOT_DIR/.built-gcc-stage2
 
