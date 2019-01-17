@@ -104,7 +104,7 @@ function git_checkout() {
 
   cd $directory
   if [ $? -eq 0 ]; then
-    git fetch -f origin $branch
+    git fetch -f origin $branch || true
     git reset --hard $branch || git reset --hard refs/tags/$branch
     git clean -dfx
   else
@@ -112,11 +112,11 @@ function git_checkout() {
   fi
 }
 
-git_checkout $__ROOT_DIR/'src-binutils' $__VERSION_BINUTILS 'git://sourceware.org/git/binutils-gdb.git'
-git_checkout $__ROOT_DIR/'src-gdb' $__VERSION_GDB 'git://sourceware.org/git/binutils-gdb.git'
-git_checkout $__ROOT_DIR/'src-gcc' $__VERSION_GCC 'git://gcc.gnu.org/git/gcc.git'
-git_checkout $__ROOT_DIR/'src-newlib' $__VERSION_NEWLIB 'git://sourceware.org/git/newlib-cygwin.git'
-git_checkout $__ROOT_DIR/'src-uclibc++' $__VERSION_UCLIBCPP 'git://git.busybox.net/uClibc++'
+# git_checkout $__ROOT_DIR/'src-binutils' $__VERSION_BINUTILS 'git://sourceware.org/git/binutils-gdb.git'
+# git_checkout $__ROOT_DIR/'src-gdb' $__VERSION_GDB 'git://sourceware.org/git/binutils-gdb.git'
+# git_checkout $__ROOT_DIR/'src-gcc' $__VERSION_GCC 'git://gcc.gnu.org/git/gcc.git'
+# git_checkout $__ROOT_DIR/'src-newlib' $__VERSION_NEWLIB 'git://sourceware.org/git/newlib-cygwin.git'
+# git_checkout $__ROOT_DIR/'src-uclibc++' $__VERSION_UCLIBCPP 'git://git.busybox.net/uClibc++'
 
 # --------------------------------------------------------------------------------------------------------------------
 # binutils
@@ -265,20 +265,50 @@ function build_uclibcpp() {
   if [ -n "$1" && -n "$2" ]; then
     MAKE_PARAMS+=' HOSTCFLAGS="-march=$1 -mabi=$2"'
     MAKE_PARAMS+=' HOSTCXXFLAGS="-march=$1 -mabi=$2"'
-  done
+  fi
   alias make="$MAKE_PARAMS make"
 
   make distclean
   make defconfig
-  patch ./.config ../config.uclibc++.patch
 
-  sed -i 's|UCLIBCXX_RUNTIME_PREFIX=""|UCLIBCXX_RUNTIME_PREFIX="${__OPT_TARGET_PATH}/${__OPT_TARGET_ARCH}"|' .config
-  if [ -n "$1" && -n "$2" ]; then
-    sed -i 's|UCLIBCXX_RUNTIME_LIB_SUBDIR=".*"|UCLIBCXX_RUNTIME_LIB_SUBDIR="/lib/'$march'/'$mabi'"|' .config
+  sed -i -E 's|.*UCLIBCXX_HAS_FLOATS.*|UCLIBCXX_HAS_FLOATS=y|' .config
+  sed -i -E 's|.*UCLIBCXX_HAS_LONG_DOUBLE.*|UCLIBCXX_HAS_LONG_DOUBLE=n|' .config
+  sed -i -E 's|.*UCLIBCXX_HAS_TLS.*|UCLIBCXX_HAS_TLS=n|' .config
+
+  sed -i -E 's|.*UCLIBCXX_HAS_LFS.*|UCLIBCXX_HAS_LFS=y|' .config
+  sed -i -E 's|.*UCLIBCXX_SUPPORT_CDIR.*|UCLIBCXX_SUPPORT_CDIR=y|' .config
+  sed -i -E 's|.*UCLIBCXX_SUPPORT_CIN.*|UCLIBCXX_SUPPORT_CIN=y|' .config
+  sed -i -E 's|.*UCLIBCXX_SUPPORT_COUT.*|UCLIBCXX_SUPPORT_COUT=y|' .config
+  sed -i -E 's|.*UCLIBCXX_SUPPORT_CERR.*|UCLIBCXX_SUPPORT_CERR=y|' .config
+  sed -i -E 's|.*UCLIBCXX_SUPPORT_CLOG.*|UCLIBCXX_SUPPORT_CLOG=y|' .config
+
+  sed -i -E 's|.*UCLIBCXX_CODE_EXPANSION.*|UCLIBCXX_CODE_EXPANSION=n|' .config
+  sed -i -E 's|.*UCLIBCXX_EXPAND_(.*)=.*|UCLIBCXX_EXPAND_\1=n|' .config
+
+  sed -i 's|.*UCLIBCXX_RUNTIME_PREFIX.*|UCLIBCXX_RUNTIME_PREFIX="'${__OPT_TARGET_PATH}'/'${__OPT_TARGET_ARCH}'"|' .config
+  if [ -n "$1" ] && [ -n "$2" ]; then
+    sed -i -E 's|.*UCLIBCXX_RUNTIME_LIB_SUBDIR.*|UCLIBCXX_RUNTIME_LIB_SUBDIR="/lib/'$march'/'$mabi'"|' .config;
+  else
+    sed -i -E 's|.*UCLIBCXX_RUNTIME_LIB_SUBDIR.*|UCLIBCXX_RUNTIME_LIB_SUBDIR="/lib"|' .config;
   fi
 
-  make lib
-  make install-include install-lib install-bin
+  sed -i -E 's|.*UCLIBCXX_EXCEPTION_SUPPORT.*|UCLIBCXX_EXCEPTION_SUPPORT=n|' .config
+  sed -i -E 's|.*IMPORT_LIBGCC_EH.*|IMPORT_LIBGCC_EH=n|' .config
+  sed -i -E 's|.*BUILD_STATIC_LIB.*|BUILD_STATIC_LIB=y|' .config
+  sed -i -E 's|.*BUILD_ONLY_STATIC_LIB.*|BUILD_ONLY_STATIC_LIB=y|' .config
+
+  # Temporary fixes
+  sed -i -E 's|typedef basic_istream<char>(.+?)istream;|typedef basic_istream<char, char_traits<char> > istream;|' include/istream
+  sed -i -E 's|typedef basic_istream<wchar_t>(.+?)wistream;|typedef basic_istream<wchar_t, char_traits<wchar_t> > wistream;|' include/istream
+  sed -i -E 's|typedef basic_ostream<char>(.+?)ostream;|typedef basic_ostream<char, char_traits<char> > ostream;|' include/ostream
+  sed -i -E 's|typedef basic_ostream<wchar_t>(.+?)wostream;|typedef basic_ostream<wchar_t, char_traits<wchar_t> > wostream;|' include/ostream
+  sed -i -E 's|typedef basic_filebuf<char>(.+?)filebuf;|typedef basic_filebuf<char, char_traits<char> > filebuf;|' include/fstream
+  sed -i -E 's|typedef basic_filebuf<wchar_t>(.+?)wfilebuf;|typedef basic_filebuf<wchar_t, char_traits<wchar_t> > wfilebuf;|' include/fstream
+  sed -i -E 's|template <class charT,class traits = char_traits<charT> >|template <class charT,class traits>|' include/istream
+  sed -i -E 's|template <class charT,class traits = char_traits<charT> >|template <class charT,class traits>|' include/ostream
+
+  make all
+  make install
   make distclean
 }
 
