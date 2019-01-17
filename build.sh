@@ -1,36 +1,85 @@
 #!/bin/bash
-set -e
+set -e -x
+
+# --------------------------------------------------------------------------------------------------------------------
+# configuration
+# --------------------------------------------------------------------------------------------------------------------
 
 __OPT_MULTICORE=-j4
-__OPT_BOOTSTRAP=--enable-bootstrap
-__OPT_TARGET_PATH=/usr/local/riscv32-unknown-elf
-__OPT_TARGET_PREFIX=riscv32-unknown-elf-
-__OPT_TARGET_ARCH=riscv32-unknown-elf
-__OPT_TARGET_MARCH=rv32i
-__OPT_TARGET_MARCH_FULL=rv32imafc
+__OPT_TARGET_PATH=/usr/local/riscv-unknown-elf
+__OPT_TARGET_PREFIX=riscv-unknown-elf-
+__OPT_TARGET_ARCH=riscv-unknown-elf
+
+__OPT_TARGET_MARCH=rv32imc
 __OPT_TARGET_MABI=ilp32
-__OPT_TARGET_MULTILIB="rv32e-ilp32e-- rv32ec-ilp32e-- rv32em-ilp32e-- rv32emc-ilp32e--
-  rv32ema-ilp32e-- rv32emac-ilp32e-- rv32ea-ilp32e-- rv32eac-ilp32e--
-  rv32i-ilp32-- rv32ic-ilp32-- rv32im-ilp32-- rv32imc-ilp32--
-  rv32ima-ilp32-- rv32imac-ilp32-- rv32ia-ilp32-- rv32iac-ilp32--
-  rv32if-ilp32-- rv32ifc-ilp32-- rv32im-ilp32-- rv32imc-ilp32--
-  rv32imaf-ilp32-- rv32imafc-ilp32-- rv32iaf-ilp32-- rv32iafc-ilp32--"
+__OPT_TARGET_MARCH_FULL=rv64gc
+
+__OPT_TARGET_ENABLE_RISCV32E=yes
+__OPT_TARGET_ENABLE_RISCV32I=yes
+__OPT_TARGET_ENABLE_RISCV64I=yes
 
 __VERSION_BINUTILS=binutils-2_31_1
 __VERSION_GDB=gdb-8.2.1-release
-__VERSION_GCC=gcc-8_2_0-release
+__VERSION_GCC=master #gcc-8_2_0-release does not support rv32e yet
 __VERSION_NEWLIB=newlib-3.0.0
 __VERSION_UCLIBCPP=v0.2.4
+
+# --------------------------------------------------------------------------------------------------------------------
+# initialization
+# --------------------------------------------------------------------------------------------------------------------
+
+__OPT_TARGET_MULTILIB=""
+if [ "yes" == $__OPT_TARGET_ENABLE_RISCV32E ]; then
+__OPT_TARGET_MULTILIB+="
+  rv32e-ilp32e-- rv32ec-ilp32e--
+  rv32em-ilp32e-- rv32emc-ilp32e--
+  rv32ea-ilp32e-- rv32eac-ilp32e--
+  rv32ema-ilp32e-- rv32emac-ilp32e--"
+fi
+if [ "yes" == $__OPT_TARGET_ENABLE_RISCV32I ]; then
+__OPT_TARGET_MULTILIB+="
+  rv32i-ilp32-- rv32ic-ilp32--
+  rv32im-ilp32-- rv32imc-ilp32--
+  rv32ia-ilp32-- rv32iac-ilp32--
+  rv32ima-ilp32-- rv32imac-ilp32--
+
+  rv32if-ilp32f-- rv32ifc-ilp32f--
+  rv32imf-ilp32f-- rv32imfc-ilp32f--
+  rv32iaf-ilp32f-- rv32iafc-ilp32f--
+  rv32imaf-ilp32f-- rv32imafc-ilp32f--
+
+  rv32ifd-ilp32d-- rv32ifdc-ilp32d--
+  rv32imfd-ilp32d-- rv32imfdc-ilp32d--
+  rv32iafd-ilp32d-- rv32iafdc-ilp32d--
+  rv32g-ilp32d-- rv32gc-ilp32d--"
+fi
+if [ "yes" == $__OPT_TARGET_ENABLE_RISCV64I ]; then
+__OPT_TARGET_MULTILIB+="
+  rv64i-ilp64-- rv64ic-ilp64--
+  rv64im-ilp64-- rv64imc-ilp64--
+  rv64ia-ilp64-- rv64iac-ilp64--
+  rv64ima-ilp64-- rv64imac-ilp64--
+
+  rv64if-ilp64f-- rv64ifc-ilp64f--
+  rv64imf-ilp64f-- rv64imfc-ilp64f--
+  rv64iaf-ilp64f-- rv64iafc-ilp64f--
+  rv64imaf-ilp64f-- rv64imafc-ilp64f--
+
+  rv64ifd-ilp64d-- rv64ifdc-ilp64d--
+  rv64imfd-ilp64d-- rv64imfdc-ilp64d--
+  rv64iafd-ilp64d-- rv64iafdc-ilp64d--
+  rv64g-ilp64d-- rv64gc-ilp64d--"
+fi
 
 export PATH=$PATH:${__OPT_TARGET_PATH}/bin
 __ROOT_DIR=`pwd`
 
-# ----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------
 # installation
-# ----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------
 
 if [ ! -f .installed-libs ]; then
-  sudo apt install -y build-essential flex bison texinfo
+  sudo apt install -y build-essential flex bison texinfo autoconf
   sudo apt install -y linux-headers-amd64
   sudo apt install -y libgmp-dev libgmp10
   sudo apt install -y libmpfr-dev libmpfr4
@@ -39,28 +88,39 @@ if [ ! -f .installed-libs ]; then
 fi
 touch .installed-libs
 
-# ----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------
 # sources
-# ----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------
 
 function git_checkout() {
   directory=$1
   branch=$2
   repository=$3
 
-  (cd $directory && git pull origin $branch && git reset --hard HEAD && git clean -dfx) \
-  || git clone --config core.autocrlf=input --depth=1 --branch=$branch $repository $directory
+  if [ ! -d $directory ]; then
+    git clone --config core.autocrlf=input --depth 1 --branch $branch $repository $directory \
+      && cd $directory && git checkout -b $branch
+  fi
+
+  cd $directory
+  if [ $? -eq 0 ]; then
+    git fetch -f origin $branch
+    git reset --hard $branch || git reset --hard refs/tags/$branch
+    git clean -dfx
+  else
+    exit 1;
+  fi
 }
 
-git_checkout 'src-binutils' __VERSION_BINUTILS 'git://sourceware.org/git/binutils-gdb.git'
-git_checkout 'src-gdb' __VERSION_GDB 'git://sourceware.org/git/binutils-gdb.git'
-git_checkout 'src-gcc' __VERSION_GCC 'git://gcc.gnu.org/git/gcc.git'
-git_checkout 'src-newlib' __VERSION_NEWLIB 'git://sourceware.org/git/newlib-cygwin.git'
-git_checkout 'src-uclibc++' __VERSION_UCLIBCPP 'git://git.busybox.net/uClibc++'
+git_checkout $__ROOT_DIR/'src-binutils' $__VERSION_BINUTILS 'git://sourceware.org/git/binutils-gdb.git'
+git_checkout $__ROOT_DIR/'src-gdb' $__VERSION_GDB 'git://sourceware.org/git/binutils-gdb.git'
+git_checkout $__ROOT_DIR/'src-gcc' $__VERSION_GCC 'git://gcc.gnu.org/git/gcc.git'
+git_checkout $__ROOT_DIR/'src-newlib' $__VERSION_NEWLIB 'git://sourceware.org/git/newlib-cygwin.git'
+git_checkout $__ROOT_DIR/'src-uclibc++' $__VERSION_UCLIBCPP 'git://git.busybox.net/uClibc++'
 
-# ----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------
 # binutils
-# ----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------
 
 cd $__ROOT_DIR
 if [ ! -f .built-binutils ]; then
@@ -71,25 +131,24 @@ if [ ! -f .built-binutils ]; then
     --prefix=${__OPT_TARGET_PATH} \
     --with-arch=${__OPT_TARGET_MARCH_FULL} \
     --program-prefix=${__OPT_TARGET_PREFIX} \
-    --enable-lto \
-    --disable-nls --disable-wchar_t \
-    --enable-initfini-array
+    --enable-lto --disable-nls --disable-wchar_t \
+    --enable-initfini-array --without-gdb
   make all ${__OPT_MULTICORE}
   make install ${__OPT_MULTICORE}
 fi
 touch $__ROOT_DIR/.built-binutils
 
-# ----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------
 # gcc
-# ----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------
 
 cd $__ROOT_DIR
 if [ ! -f .built-gcc ]; then
-  if [ ! -f ./src-gcc/gcc/config/riscv/t-elf-multilib64 ]; then
-    mv ./src-gcc/gcc/config/riscv/t-elf-multilib ./src-gcc/gcc/config/riscv/t-elf-multilib64 | true
-    ./src-gcc/gcc/config/riscv/multilib-generator ${__OPT_TARGET_MULTILIB} \
-      > ./src-gcc/gcc/config/riscv/t-elf-multilib32
-    patch ./src-gcc/gcc/config.gcc ./config.gcc.patch
+  __SRC_GCC_MULTILIB=./src-gcc/gcc/config/riscv
+  if [ ! -f $__SRC_GCC_MULTILIB/t-elf-multilib64 ]; then
+    mv $__SRC_GCC_MULTILIB/t-elf-multilib $__SRC_GCC_MULTILIB/t-elf-multilib64
+    $__SRC_GCC_MULTILIB/multilib-generator ${__OPT_TARGET_MULTILIB} \
+      > $__SRC_GCC_MULTILIB/t-elf-multilib
   fi
 
   rm -rf build-gcc || true
@@ -98,21 +157,20 @@ if [ ! -f .built-gcc ]; then
     --target=${__OPT_TARGET_ARCH} \
     --prefix=${__OPT_TARGET_PATH} \
     --program-prefix=${__OPT_TARGET_PREFIX} \
-    ${__OPT_BOOTSTRAP} \
-    --without-headers --enable-languages=c,c++ \
+    --without-headers --enable-languages=c --with-newlib \
     --with-arch=${__OPT_TARGET_MARCH} --with-abi=${__OPT_TARGET_MABI} \
-    --enable-lto --enable-multilib \
+    --enable-lto --enable-multilib --enable-initfini-array \
     --disable-nls --disable-wchar_t --disable-threads --disable-libstdcxx \
-    --enable-initfini-array \
-    --with-system-zlib --with-gnu-as --with-gnu-ld
+    --disable-shared --disable-libssp \
+    --with-system-zlib --without-gcov --with-gnu-as --with-gnu-ld
   make all-gcc ${__OPT_MULTICORE}
   make install-gcc ${__OPT_MULTICORE}
 fi
 touch $__ROOT_DIR/.built-gcc
 
-# ----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------
 # checking gcc
-# ----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------
 
 #cd $__ROOT_DIR
 #if [ ! -d checked-gcc ]; then
@@ -143,9 +201,9 @@ touch $__ROOT_DIR/.built-gcc
 #fi
 #mkdir $__ROOT_DIR/checked-gcc | true
 
-# ----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------
 # newlib (libc)
-# ----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------
 
 cd $__ROOT_DIR
 if [ ! -f .built-newlib ]; then
@@ -159,39 +217,57 @@ if [ ! -f .built-newlib ]; then
     --disable-newlib-supplied-syscalls --enable-newlib-nano-malloc \
     --enable-newlib-global-atexit --enable-newlib-register-fini \
     --disable-newlib-multithread
-  make all ${__OPT_MULTICORE}
+
+  # Currently a little bit buggy, so repeat
+  set +e
+  make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
+    || make all ${__OPT_MULTICORE} \
   make install ${__OPT_MULTICORE}
+  set -e
 fi
 touch $__ROOT_DIR/.built-newlib
 
-# ----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------
 # gcc stage 2
-# ----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------
 
 cd $__ROOT_DIR
 if [ ! -f .built-gcc-stage2 ]; then
+  __SRC_GCC_MULTILIB=./src-gcc/gcc/config/riscv
+  if [ ! -f $__SRC_GCC_MULTILIB/t-elf-multilib64 ]; then
+    mv $__SRC_GCC_MULTILIB/t-elf-multilib $__SRC_GCC_MULTILIB/t-elf-multilib64
+    $__SRC_GCC_MULTILIB/multilib-generator ${__OPT_TARGET_MULTILIB} \
+      > $__SRC_GCC_MULTILIB/t-elf-multilib
+  fi
+
   rm -rf build-gcc-stage2 || true
   mkdir build-gcc-stage2 && cd build-gcc-stage2
   ../src-gcc/configure \
     --target=${__OPT_TARGET_ARCH} \
     --prefix=${__OPT_TARGET_PATH} \
     --program-prefix=${__OPT_TARGET_PREFIX} \
-    ${__OPT_BOOTSTRAP} \
-    --without-headers --enable-languages=c,c++ \
+    --without-headers --enable-languages=c,c++ --with-newlib \
     --with-arch=${__OPT_TARGET_MARCH} --with-abi=${__OPT_TARGET_MABI} \
-    --enable-lto --enable-multilib \
+    --enable-lto --enable-multilib --enable-initfini-array \
     --disable-nls --disable-wchar_t --disable-threads --disable-libstdcxx \
-    --enable-initfini-array \
-    --with-system-zlib --with-newlib --disable-shared \
-    --with-gnu-as --with-gnu-ld
+    --disable-shared --disable-libssp \
+    --with-system-zlib --without-gcov --with-gnu-as --with-gnu-ld
   make all ${__OPT_MULTICORE}
   make install ${__OPT_MULTICORE}
 fi
 touch $__ROOT_DIR/.built-gcc-stage2
 
-# ----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------
 # uclibc++ (libcpp)
-# ----------------------------------------------------------------------------
+# --------------------------------------------------------------------------------------------------------------------
 
 function build_uclibcpp() {
   MAKE_PARAMS='CROSS_COMPILE="${__OPT_TARGET_PREFIX}"'
