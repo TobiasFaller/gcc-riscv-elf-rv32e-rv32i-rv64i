@@ -5,7 +5,10 @@ set -e -x
 # configuration
 # --------------------------------------------------------------------------------------------------------------------
 
-__OPT_MULTICORE=
+# Set __OPT_MULTICORE to "" when using WSL because of a multi-threading bug:
+# "Fixed an issue where multithreaded operations could return ENOENT even though the file exists. [GH 2712]"
+# https://docs.microsoft.com/en-us/windows/wsl/release-notes#build-17655-skip-ahead
+__OPT_MULTICORE=-j4
 __OPT_TARGET_PATH=/usr/local/riscv-unknown-elf
 __OPT_TARGET_PREFIX=riscv-unknown-elf-
 __OPT_TARGET_ARCH=riscv-unknown-elf
@@ -323,15 +326,15 @@ if [ ! -f .built-uclibc++ ]; then
   rm ./src/eh_alloc.cpp | true
   rm ./include/unwind-cxx.h | true
 
-  # Build default version
-  build_uclibcpp '' ''
-
   # Build specific target architectures / ABIs
   for type in ${__OPT_TARGET_MULTILIB}; do
     march=`echo $type | sed 's/\(.*\)-\(.*\)--/\1/'`
     mabi=`echo $type | sed 's/\(.*\)-\(.*\)--/\2/'`
     build_uclibcpp $march $mabi
   done;
+
+  # Build default version last
+  build_uclibcpp '' ''
 
   # Rename files to lower case
   cd ${__OPT_TARGET_PATH}/${__OPT_TARGET_ARCH}/lib
