@@ -115,11 +115,11 @@ function git_checkout() {
   fi
 }
 
-# git_checkout $__ROOT_DIR/'src-binutils' $__VERSION_BINUTILS 'git://sourceware.org/git/binutils-gdb.git'
-# git_checkout $__ROOT_DIR/'src-gdb' $__VERSION_GDB 'git://sourceware.org/git/binutils-gdb.git'
-# git_checkout $__ROOT_DIR/'src-gcc' $__VERSION_GCC 'git://gcc.gnu.org/git/gcc.git'
-# git_checkout $__ROOT_DIR/'src-newlib' $__VERSION_NEWLIB 'git://sourceware.org/git/newlib-cygwin.git'
-# git_checkout $__ROOT_DIR/'src-uclibc++' $__VERSION_UCLIBCPP 'git://git.busybox.net/uClibc++'
+git_checkout $__ROOT_DIR/'src-binutils' $__VERSION_BINUTILS 'git://sourceware.org/git/binutils-gdb.git'
+git_checkout $__ROOT_DIR/'src-gdb' $__VERSION_GDB 'git://sourceware.org/git/binutils-gdb.git'
+git_checkout $__ROOT_DIR/'src-gcc' $__VERSION_GCC 'git://gcc.gnu.org/git/gcc.git'
+git_checkout $__ROOT_DIR/'src-newlib' $__VERSION_NEWLIB 'git://sourceware.org/git/newlib-cygwin.git'
+git_checkout $__ROOT_DIR/'src-uclibc++' $__VERSION_UCLIBCPP 'git://git.busybox.net/uClibc++'
 
 # --------------------------------------------------------------------------------------------------------------------
 # binutils
