@@ -1,5 +1,6 @@
 #!/bin/bash
-set -e -x
+set -e
+#set -e -x
 
 # --------------------------------------------------------------------------------------------------------------------
 # configuration
@@ -76,12 +77,17 @@ fi
 
 export PATH=$PATH:${__OPT_TARGET_PATH}/bin
 __ROOT_DIR=`pwd`
+__SRC_DIR=$__ROOT_DIR/src
+__BUILD_DIR=$__ROOT_DIR/build
+
+mkdir -p $__SRC_DIR
+mkdir -p $__BUILD_DIR
 
 # --------------------------------------------------------------------------------------------------------------------
 # installation
 # --------------------------------------------------------------------------------------------------------------------
 
-if [ ! -f .installed-libs ]; then
+if [ ! -f $__SRC_DIR/.installed-libs ]; then
   sudo apt install -y build-essential flex bison texinfo autoconf
   sudo apt install -y linux-headers-amd64
   sudo apt install -y libgmp-dev libgmp10
@@ -89,7 +95,7 @@ if [ ! -f .installed-libs ]; then
   sudo apt install -y libmpc-dev libmpc3
   sudo apt install -y zlib1g-dev zlib1g
 fi
-touch .installed-libs
+touch $__SRC_DIR/.installed-libs
 
 # --------------------------------------------------------------------------------------------------------------------
 # sources
@@ -115,21 +121,24 @@ function git_checkout() {
   fi
 }
 
-git_checkout $__ROOT_DIR/'src-binutils' $__VERSION_BINUTILS 'git://sourceware.org/git/binutils-gdb.git'
-git_checkout $__ROOT_DIR/'src-gdb' $__VERSION_GDB 'git://sourceware.org/git/binutils-gdb.git'
-git_checkout $__ROOT_DIR/'src-gcc' $__VERSION_GCC 'git://gcc.gnu.org/git/gcc.git'
-git_checkout $__ROOT_DIR/'src-newlib' $__VERSION_NEWLIB 'git://sourceware.org/git/newlib-cygwin.git'
-git_checkout $__ROOT_DIR/'src-uclibc++' $__VERSION_UCLIBCPP 'git://git.busybox.net/uClibc++'
+if [ ! -f $__SRC_DIR/.installed-sources ]; then
+  git_checkout $__SRC_DIR/'src-binutils' $__VERSION_BINUTILS 'git://sourceware.org/git/binutils-gdb.git'
+  git_checkout $__SRC_DIR/'src-gdb' $__VERSION_GDB 'git://sourceware.org/git/binutils-gdb.git'
+  git_checkout $__SRC_DIR/'src-gcc' $__VERSION_GCC 'git://gcc.gnu.org/git/gcc.git'
+  git_checkout $__SRC_DIR/'src-newlib' $__VERSION_NEWLIB 'git://sourceware.org/git/newlib-cygwin.git'
+  git_checkout $__SRC_DIR/'src-uclibc++' $__VERSION_UCLIBCPP 'git://git.busybox.net/uClibc++'
+fi
+touch $__SRC_DIR/.installed-sources
 
 # --------------------------------------------------------------------------------------------------------------------
 # binutils
 # --------------------------------------------------------------------------------------------------------------------
 
-cd $__ROOT_DIR
+cd $__BUILD_DIR
 if [ ! -f .built-binutils ]; then
   rm -rf build-binutils || true
   mkdir build-binutils && cd build-binutils
-  ../src-binutils/configure \
+  $__SRC_DIR/src-binutils/configure \
     --target=${__OPT_TARGET_ARCH} \
     --prefix=${__OPT_TARGET_PATH} \
     --with-arch=${__OPT_TARGET_MARCH_FULL} \
@@ -140,15 +149,15 @@ if [ ! -f .built-binutils ]; then
   make all ${__OPT_MULTICORE}
   make install ${__OPT_MULTICORE}
 fi
-touch $__ROOT_DIR/.built-binutils
+touch $__BUILD_DIR/.built-binutils
 
 # --------------------------------------------------------------------------------------------------------------------
 # gcc
 # --------------------------------------------------------------------------------------------------------------------
 
-cd $__ROOT_DIR
+cd $__BUILD_DIR
 if [ ! -f .built-gcc ]; then
-  __SRC_GCC_MULTILIB=./src-gcc/gcc/config/riscv
+  __SRC_GCC_MULTILIB=$__SRC_DIR/src-gcc/gcc/config/riscv
   if [ ! -f $__SRC_GCC_MULTILIB/t-elf-multilib64 ]; then
     mv $__SRC_GCC_MULTILIB/t-elf-multilib $__SRC_GCC_MULTILIB/t-elf-multilib64
     $__SRC_GCC_MULTILIB/multilib-generator ${__OPT_TARGET_MULTILIB} \
@@ -157,7 +166,7 @@ if [ ! -f .built-gcc ]; then
 
   rm -rf build-gcc || true
   mkdir build-gcc && cd build-gcc
-  ../src-gcc/configure \
+  $__SRC_DIR/src-gcc/configure \
     --target=${__OPT_TARGET_ARCH} \
     --prefix=${__OPT_TARGET_PATH} \
     --program-prefix=${__OPT_TARGET_PREFIX} \
@@ -171,46 +180,177 @@ if [ ! -f .built-gcc ]; then
   make all-gcc ${__OPT_MULTICORE}
   make install-gcc ${__OPT_MULTICORE}
 fi
-touch $__ROOT_DIR/.built-gcc
+touch $__BUILD_DIR/.built-gcc
 
 # --------------------------------------------------------------------------------------------------------------------
 # checking gcc
 # --------------------------------------------------------------------------------------------------------------------
 
-#cd $__ROOT_DIR
-#if [ ! -d checked-gcc ]; then
-#  rm -rf check-gcc || true
-#  mkdir check-gcc && cd check-gcc
-#
-#  __LDFLAGS='-nostdlib -Wl,-Bstatic,-T,../test/link.ld,--no-gc-sections'
-#  __CCFLAGS='-Os --std=c99 -ffreestanding -nostdlib'
-#
-#    ${__OPT_TARGET_PREFIX}gcc ${__CCFLAGS} -o start.o -c ../test/start.c
-#    ${__OPT_TARGET_PREFIX}gcc ${__CCFLAGS} -o start-asm.o -c ../test/start.s
-#    ${__OPT_TARGET_PREFIX}gcc ${__LDFLAGS} -o start.elf start.o
-#    ${__OPT_TARGET_PREFIX}gcc ${__LDFLAGS} -o start-asm.elf start-asm.o
-#    ${__OPT_TARGET_PREFIX}readelf start.elf -a > start.txt
-#    ${__OPT_TARGET_PREFIX}readelf start-asm.elf -a > start-asm.txt
-#
-#  for type in ${__OPT_TARGET_MULTILIB}; do
-#    march=`echo $type | sed 's/\(.*\)-\(.*\)--/\1/'`
-#    mabi=`echo $type | sed 's/\(.*\)-\(.*\)--/\2/'`
-#
-#    ${__OPT_TARGET_PREFIX}gcc ${__CCFLAGS} -march=$march -mabi=$mabi -o $march.o -c ../test/start.c
-#    ${__OPT_TARGET_PREFIX}gcc ${__CCFLAGS} -march=$march -mabi=$mabi -o $march-asm.o -c ../test/start.s
-#    ${__OPT_TARGET_PREFIX}gcc ${__LDFLAGS} -o $march.elf $march.o
-#    ${__OPT_TARGET_PREFIX}gcc ${__LDFLAGS} -o $march-asm.elf $march-asm.o
-#    ${__OPT_TARGET_PREFIX}readelf $march.elf -a > $march.txt
-#    ${__OPT_TARGET_PREFIX}readelf $march-asm.elf -a > $march-asm.txt
-#  done
-#fi
-#mkdir $__ROOT_DIR/checked-gcc | true
+function check_generated_type() {
+  march=$1
+  mabi=$2
+  elf_file=$3
+
+  case $march in
+    rv32*) local bits=32;;
+    rv64*) local bits=64;;
+    rv128*) local bits=128;;
+    *) echo "Unknown machine architecture"; exit;;
+  esac
+
+  case $march in
+    rv*c|rv*c*) local rvc=yes;;
+    *) local rvc=no;;
+  esac
+
+  case $march in
+    rv32e|rv32e*) local rve=yes;;
+    *) local rve=no;;
+  esac
+
+  case $mabi in
+    *f) local rvf=yes; local rvd=no;;
+    *d) local rvf=no; local rvd=yes;;
+    *) local rvf=no; local rvd=no;;
+  esac
+
+  ${__OPT_TARGET_PREFIX}readelf $elf_file -a > start-${march}-${mabi}.elf.log
+
+  if [ -z "$(grep -e 'Machine:.*RISC-V' start-${march}-${mabi}.elf.log)" ]; then
+    echo "Invalid machine type. Exiting!"; exit;
+  fi
+  if [ -z "$(grep -e 'Class:.*ELF'"${bits}"'' start-${march}-${mabi}.elf.log)" ]; then
+    echo "Invalid class type. Exiting!"; exit;
+  fi
+
+  if [ "$rvc" == "yes" ]; then
+    if [ -z "$(grep -e 'Flags:.*RVC' start-${march}-${mabi}.elf.log)" ]; then
+      echo "RVC flag present. Exiting!"; exit;
+    fi
+  else
+    if [ ! -z "$(grep -e 'Flags:.*RVC' start-${march}-${mabi}.elf.log)" ]; then
+      echo "RVC flag not present. Exiting!"; exit;
+    fi
+  fi
+
+  if [ "$rve" == "yes" ]; then
+    if [ -z "$(grep -e 'Flags:.*RVE' start-${march}-${mabi}.elf.log)" ]; then
+      echo "RVE flag present. Exiting!"; exit;
+    fi
+  else
+    if [ ! -z "$(grep -e 'Flags:.*RVE' start-${march}-${mabi}.elf.log)" ]; then
+      echo "RVE flag not present. Exiting!"; exit;
+    fi
+  fi
+
+  if [ "$rvf" == "yes" ]; then
+    if [ -z "$(grep -e 'Flags:.*single-float ABI' start-${march}-${mabi}.elf.log)" ]; then
+      echo "Single-float flag not present. Exiting!"; exit;
+    fi
+  elif [ "$rvd" == "yes" ]; then
+    if [ -z "$(grep -e 'Flags:.*double-float ABI' start-${march}-${mabi}.elf.log)" ]; then
+      echo "Double-float flag not present. Exiting!"; exit;
+    fi
+  else
+    if [ -z "$(grep -e 'Flags:.*soft-float ABI' start-${march}-${mabi}.elf.log)" ] \
+        && [ -z "$(grep -e 'Flags:.*0x0' start-${march}-${mabi}.elf.log)" ]; then
+      echo "Soft-float flag not present. Exiting!"; exit;
+    fi
+  fi
+}
+
+function check_gcc() {
+  local __LDFLAGS='-nostdlib -Wl,-Bstatic,-T,link.ld,--no-gc-sections'
+  local __CCFLAGS='-Os --std=c99 -ffreestanding -nostdlib'
+  local __CPPFLAGS='-Os --std=c++17 -ffreestanding -nostdlib'
+
+  march=$1
+  mabi=$2
+  case $march in
+  rv32*)
+    bits=32;
+    ;;
+  rv64*)
+    bits=64;
+    ;;
+  rv128*)
+    bits=128;
+    ;;
+  *)
+    exit;
+    ;;
+  esac
+
+  cat > start.s <<EOF
+.section .text
+_start:
+  nop
+EOF
+  cat > start.c <<EOF
+void _start(void) {
+  __asm("nop");
+}
+EOF
+  cat > start.cpp <<EOF
+void _start(void) {
+  __asm("nop");
+}
+EOF
+  cat > link.ld <<EOF
+  OUTPUT_FORMAT("elf${bits}-littleriscv", "elf${bits}-littleriscv", "elf{bits}-littleriscv")
+  OUTPUT_ARCH(riscv)
+
+  MEMORY {
+    MEM (XRW) : ORIGIN = 0x00000000, LENGTH = 0x01000000
+  }
+
+  SECTIONS {
+    .text : ALIGN(4) {
+      __text_start__ = .;
+      *(.text .text.*)
+      __text_end__ = .;
+    } > MEM
+}
+EOF
+
+  echo "Checking GCC arch=${march} with abi=${mabi}:"
+  echo "Testing assembler"
+  ${__OPT_TARGET_PREFIX}gcc ${__CCFLAGS} -march=$march -mabi=$mabi -o start-${march}-${mabi}.o -c start.s
+  ${__OPT_TARGET_PREFIX}gcc ${__LDFLAGS} -march=$march -mabi=$mabi -o start-${march}-${mabi}.elf start-${march}-${mabi}.o
+  check_generated_type $march $mabi start-${march}-${mabi}.elf
+
+  echo "Testing C-compiler"
+  ${__OPT_TARGET_PREFIX}gcc ${__CCFLAGS} -march=$march -mabi=$mabi -o start-${march}-${mabi}.o -c start.c
+  ${__OPT_TARGET_PREFIX}gcc ${__LDFLAGS} -march=$march -mabi=$mabi -o start-${march}-${mabi}.elf start-${march}-${mabi}.o
+  check_generated_type $march $mabi start-${march}-${mabi}.elf
+
+  echo "Testing C++-compiler"
+  ${__OPT_TARGET_PREFIX}g++ ${__CPPFLAGS} -march=$march -mabi=$mabi -o start-${march}-${mabi}.o -c start.cpp
+  ${__OPT_TARGET_PREFIX}g++ ${__LDFLAGS} -march=$march -mabi=$mabi -o start-${march}-${mabi}.elf start-${march}-${mabi}.o
+  check_generated_type $march $mabi start-${march}-${mabi}.elf
+}
+
+cd $__BUILD_DIR
+if [ ! -f .checked-gcc ]; then
+  rm -rf check-gcc || true
+  mkdir check-gcc && cd check-gcc
+
+  check_gcc $__OPT_TARGET_MARCH $__OPT_TARGET_MABI
+
+  for type in ${__OPT_TARGET_MULTILIB}; do
+    march=`echo $type | sed 's/\(.*\)-\(.*\)--/\1/'`
+    mabi=`echo $type | sed 's/\(.*\)-\(.*\)--/\2/'`
+
+    check_gcc $march $mabi
+  done
+fi
+touch $__BUILD_DIR/.checked-gcc
 
 # --------------------------------------------------------------------------------------------------------------------
 # newlib (libc)
 # --------------------------------------------------------------------------------------------------------------------
 
-cd $__ROOT_DIR
+cd $__BUILD_DIR
 if [ ! -f .built-newlib ]; then
   rm -rf build-newlib || true
   mkdir build-newlib && cd build-newlib
@@ -226,13 +366,13 @@ if [ ! -f .built-newlib ]; then
   make all ${__OPT_MULTICORE}
   make install ${__OPT_MULTICORE}
 fi
-touch $__ROOT_DIR/.built-newlib
+touch $__BUILD_DIR/.built-newlib
 
 # --------------------------------------------------------------------------------------------------------------------
 # gcc stage 2
 # --------------------------------------------------------------------------------------------------------------------
 
-cd $__ROOT_DIR
+cd $__BUILD_DIR
 if [ ! -f .built-gcc-stage2 ]; then
   __SRC_GCC_MULTILIB=./src-gcc/gcc/config/riscv
   if [ ! -f $__SRC_GCC_MULTILIB/t-elf-multilib64 ]; then
@@ -257,7 +397,7 @@ if [ ! -f .built-gcc-stage2 ]; then
   make all ${__OPT_MULTICORE}
   make install ${__OPT_MULTICORE}
 fi
-touch $__ROOT_DIR/.built-gcc-stage2
+touch $__BUILD_DIR/.built-gcc-stage2
 
 # --------------------------------------------------------------------------------------------------------------------
 # uclibc++ (libcpp)
@@ -315,7 +455,7 @@ function build_uclibcpp() {
   make distclean
 }
 
-cd $__ROOT_DIR
+cd $__BUILD_DIR
 if [ ! -f .built-uclibc++ ]; then
   cd src-uclibc++
   git reset --hard HEAD
@@ -342,7 +482,7 @@ if [ ! -f .built-uclibc++ ]; then
     mv $file $(dirname $file)/`echo $(basename $file) | tr [:upper:] [:lower:]`
   done;
 fi
-touch $__ROOT_DIR/.built-uclibc++ | true
+touch $__BUILD_DIR/.built-uclibc++ | true
 
-cd $__ROOT_DIR
+cd $__BUILD_DIR
 echo "Done"
