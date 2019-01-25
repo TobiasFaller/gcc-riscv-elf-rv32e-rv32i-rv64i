@@ -1,0 +1,7 @@
+# Directories
+src-*
+build-*
+
+# Files
+.built-*
+.installed-*
