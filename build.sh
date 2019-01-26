@@ -266,6 +266,7 @@ function check_gcc() {
 
   march=$1
   mabi=$2
+  has_cpp=$3
   case $march in
   rv32*)
     bits=32;
@@ -324,10 +325,12 @@ EOF
   ${__OPT_TARGET_PREFIX}gcc ${__LDFLAGS} -march=$march -mabi=$mabi -o start-${march}-${mabi}.elf start-${march}-${mabi}.o
   check_generated_type $march $mabi start-${march}-${mabi}.elf
 
-  echo "Testing C++-compiler"
-  ${__OPT_TARGET_PREFIX}g++ ${__CPPFLAGS} -march=$march -mabi=$mabi -o start-${march}-${mabi}.o -c start.cpp
-  ${__OPT_TARGET_PREFIX}g++ ${__LDFLAGS} -march=$march -mabi=$mabi -o start-${march}-${mabi}.elf start-${march}-${mabi}.o
-  check_generated_type $march $mabi start-${march}-${mabi}.elf
+  if [ "$has_cpp" == "yes" ]; then
+    echo "Testing C++-compiler"
+    ${__OPT_TARGET_PREFIX}g++ ${__CPPFLAGS} -march=$march -mabi=$mabi -o start-${march}-${mabi}.o -c start.cpp
+    ${__OPT_TARGET_PREFIX}g++ ${__LDFLAGS} -march=$march -mabi=$mabi -o start-${march}-${mabi}.elf start-${march}-${mabi}.o
+    check_generated_type $march $mabi start-${march}-${mabi}.elf
+  fi
 }
 
 cd $__BUILD_DIR
@@ -335,13 +338,13 @@ if [ ! -f .checked-gcc ]; then
   rm -rf check-gcc || true
   mkdir check-gcc && cd check-gcc
 
-  check_gcc $__OPT_TARGET_MARCH $__OPT_TARGET_MABI
+  check_gcc $__OPT_TARGET_MARCH $__OPT_TARGET_MABI "no"
 
   for type in ${__OPT_TARGET_MULTILIB}; do
     march=`echo $type | sed 's/\(.*\)-\(.*\)--/\1/'`
     mabi=`echo $type | sed 's/\(.*\)-\(.*\)--/\2/'`
 
-    check_gcc $march $mabi
+    check_gcc $march $mabi "no"
   done
 fi
 touch $__BUILD_DIR/.checked-gcc
@@ -398,6 +401,26 @@ if [ ! -f .built-gcc-stage2 ]; then
   make install ${__OPT_MULTICORE}
 fi
 touch $__BUILD_DIR/.built-gcc-stage2
+
+# --------------------------------------------------------------------------------------------------------------------
+# checking gcc of stage 2
+# --------------------------------------------------------------------------------------------------------------------
+
+cd $__BUILD_DIR
+if [ ! -f .checked-gcc-stage-2 ]; then
+  rm -rf check-gcc-stage-2 || true
+  mkdir check-gcc-stage-2 && cd check-gcc-stage-2
+
+  check_gcc $__OPT_TARGET_MARCH $__OPT_TARGET_MABI "yes"
+
+  for type in ${__OPT_TARGET_MULTILIB}; do
+    march=`echo $type | sed 's/\(.*\)-\(.*\)--/\1/'`
+    mabi=`echo $type | sed 's/\(.*\)-\(.*\)--/\2/'`
+
+    check_gcc $march $mabi "yes"
+  done
+fi
+touch $__BUILD_DIR/.checked-gcc-stage-2
 
 # --------------------------------------------------------------------------------------------------------------------
 # uclibc++ (libcpp)
