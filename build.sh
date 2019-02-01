@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -e -x
 #set -e -x
 
 # --------------------------------------------------------------------------------------------------------------------
@@ -9,7 +9,7 @@ set -e
 # Set __OPT_MULTICORE to "" when using WSL because of a multi-threading bug:
 # "Fixed an issue where multithreaded operations could return ENOENT even though the file exists. [GH 2712]"
 # https://docs.microsoft.com/en-us/windows/wsl/release-notes#build-17655-skip-ahead
-__OPT_MULTICORE=-j4
+__OPT_MULTICORE=-j5
 __OPT_TARGET_PATH=/usr/local/riscv-unknown-elf
 __OPT_TARGET_PREFIX=riscv-unknown-elf-
 __OPT_TARGET_ARCH=riscv-unknown-elf
@@ -357,7 +357,7 @@ cd $__BUILD_DIR
 if [ ! -f .built-newlib ]; then
   rm -rf build-newlib || true
   mkdir build-newlib && cd build-newlib
-  ../src-newlib/configure \
+  $__SRC_DIR/src-newlib/configure \
     --target=${__OPT_TARGET_ARCH} \
     --with-arch=${__OPT_TARGET_MARCH} --with-abi=${__OPT_TARGET_MABI} \
     --prefix=${__OPT_TARGET_PATH} \
@@ -386,7 +386,7 @@ if [ ! -f .built-gcc-stage2 ]; then
 
   rm -rf build-gcc-stage2 || true
   mkdir build-gcc-stage2 && cd build-gcc-stage2
-  ../src-gcc/configure \
+  $__SRC_DIR/src-gcc/configure \
     --target=${__OPT_TARGET_ARCH} \
     --prefix=${__OPT_TARGET_PATH} \
     --program-prefix=${__OPT_TARGET_PREFIX} \
@@ -480,7 +480,7 @@ function build_uclibcpp() {
 
 cd $__BUILD_DIR
 if [ ! -f .built-uclibc++ ]; then
-  cd src-uclibc++
+  cd $__SRC_DIR/src-uclibc++
   git reset --hard HEAD
   git clean -dfx
 
