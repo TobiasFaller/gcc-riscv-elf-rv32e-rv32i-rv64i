@@ -9,7 +9,7 @@ set -e -x
 # Set __OPT_MULTICORE to "" when using WSL because of a multi-threading bug:
 # "Fixed an issue where multithreaded operations could return ENOENT even though the file exists. [GH 2712]"
 # https://docs.microsoft.com/en-us/windows/wsl/release-notes#build-17655-skip-ahead
-__OPT_MULTICORE=-j5
+__OPT_MULTICORE=-j4
 __OPT_TARGET_PATH=/usr/local/riscv-unknown-elf
 __OPT_TARGET_PREFIX=riscv-unknown-elf-
 __OPT_TARGET_ARCH=riscv-unknown-elf
@@ -377,7 +377,7 @@ touch $__BUILD_DIR/.built-newlib
 
 cd $__BUILD_DIR
 if [ ! -f .built-gcc-stage2 ]; then
-  __SRC_GCC_MULTILIB=./src-gcc/gcc/config/riscv
+  __SRC_GCC_MULTILIB=$__SRC_DIR/src-gcc/gcc/config/riscv
   if [ ! -f $__SRC_GCC_MULTILIB/t-elf-multilib64 ]; then
     mv $__SRC_GCC_MULTILIB/t-elf-multilib $__SRC_GCC_MULTILIB/t-elf-multilib64
     $__SRC_GCC_MULTILIB/multilib-generator ${__OPT_TARGET_MULTILIB} \
