@@ -462,6 +462,7 @@ function build_uclibcpp() {
   sed -i -E 's|.*IMPORT_LIBGCC_EH.*|IMPORT_LIBGCC_EH=n|' .config
   sed -i -E 's|.*BUILD_STATIC_LIB.*|BUILD_STATIC_LIB=y|' .config
   sed -i -E 's|.*BUILD_ONLY_STATIC_LIB.*|BUILD_ONLY_STATIC_LIB=y|' .config
+  sed -i -E 's|.*DODEBUG.*|DODEBUG=y|' .config
 
   # Temporary fixes
   sed -i -E 's|typedef basic_istream<char>(.+?)istream;|typedef basic_istream<char, char_traits<char> > istream;|' include/istream
