@@ -22,11 +22,11 @@ __OPT_TARGET_ENABLE_RISCV32E=yes
 __OPT_TARGET_ENABLE_RISCV32I=yes
 __OPT_TARGET_ENABLE_RISCV64I=yes
 
-__VERSION_BINUTILS=binutils-2_31_1
-__VERSION_GDB=gdb-8.2.1-release
-__VERSION_GCC=master #gcc-8_2_0-release does not support rv32e yet
-__VERSION_NEWLIB=newlib-3.0.0
-__VERSION_UCLIBCPP=v0.2.4
+__VERSION_BINUTILS=binutils-2_32
+__VERSION_GDB=gdb-8.3-release
+__VERSION_GCC=gcc-9_1_0-release
+__VERSION_NEWLIB=newlib-3.1.0
+__VERSION_UCLIBCPP=v0.2.5
 
 # --------------------------------------------------------------------------------------------------------------------
 # initialization

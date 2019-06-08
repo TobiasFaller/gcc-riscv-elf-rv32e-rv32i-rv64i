@@ -1,7 +1,7 @@
 RISC-V RV32E / RV32I / RV64I ELF (WIP)
 ======================================
 
-Build script to build the current GCC toolchain from source with riscv-unknown-elf as target with ilp32e / ilp32 and ilp64 ABI.
+Build script to build the current GCC toolchain from source with riscv-unknown-elf bare-metal as target with ilp32e / ilp32 and ilp64 ABI.
 This includes the support for newlib and uclibc++.
 The configuration does not support multi-threading and uses init_array and fini_array to initialize the used software libraries.
 
@@ -37,6 +37,17 @@ Extensions:
 
 Library-sharing between the compressed and uncompressed instruction sets is disabled and each architecture / instruction set generates a unique c / c++ library.
 The following configuration sets can be built independently or together in one toolchain:
+
+Toolchain Version
+-----------------
+
+| Software / Library                | Version | Date             | Homepage                                       |
+| --------------------------------- | ------- | ---------------- | ---------------------------------------------- |
+| The GNU Binutils (Binutils)       | 2.32    | 2019-02-02 11:36 | [Link](https://www.gnu.org/software/binutils/) |
+| The GNU Project Debugger (GDB)    | 8.3     | 2019-05-11 14:46 | [Link](https://www.gnu.org/software/gdb/)      |
+| The GNU Compiler Collection (GCC) | 9.1.1   | 2019-05-03 08:47 | [Link](https://gcc.gnu.org/)                   |
+| Newlib C Library (Newlib)         | 3.1.0   | 2019-01-01 04:40 | [Link](https://sourceware.org/newlib/)         |
+| uCLibc++                          | 0.2.5   | 2019-04-06 17:20 | [Link](https://cxx.uclibc.org/)                |
 
 RV32E
 -----
