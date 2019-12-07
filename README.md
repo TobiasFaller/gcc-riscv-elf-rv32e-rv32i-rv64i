@@ -43,9 +43,9 @@ Toolchain Version
 
 | Software / Library                | Version | Date             | Homepage                                       |
 | --------------------------------- | ------- | ---------------- | ---------------------------------------------- |
-| The GNU Binutils (Binutils)       | 2.32    | 2019-02-02 11:36 | [Link](https://www.gnu.org/software/binutils/) |
-| The GNU Project Debugger (GDB)    | 8.3     | 2019-05-11 14:46 | [Link](https://www.gnu.org/software/gdb/)      |
-| The GNU Compiler Collection (GCC) | 9.1.1   | 2019-05-03 08:47 | [Link](https://gcc.gnu.org/)                   |
+| The GNU Binutils (Binutils)       | 2.33.1  | 2019-10-12 10:18 | [Link](https://www.gnu.org/software/binutils/) |
+| The GNU Project Debugger (GDB)    | 8.3.1   | 2019-09-20 18:35 | [Link](https://www.gnu.org/software/gdb/)      |
+| The GNU Compiler Collection (GCC) | 9.2.0   | 2019-08-12 07:38 | [Link](https://gcc.gnu.org/)                   |
 | Newlib C Library (Newlib)         | 3.1.0   | 2019-01-01 04:40 | [Link](https://sourceware.org/newlib/)         |
 | uCLibc++                          | 0.2.5   | 2019-04-06 17:20 | [Link](https://cxx.uclibc.org/)                |
 
