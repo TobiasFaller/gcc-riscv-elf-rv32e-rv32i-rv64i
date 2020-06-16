@@ -22,9 +22,9 @@ __OPT_TARGET_ENABLE_RISCV32I=yes
 __OPT_TARGET_ENABLE_RISCV64I=yes
 
 __VERSION_BINUTILS=binutils-2_33_1
-__VERSION_GDB=gdb-8.3.1-release
-__VERSION_GCC=gcc-9_2_0-release
-__VERSION_NEWLIB=newlib-3.1.0
+__VERSION_GDB=gdb-9.2-release
+__VERSION_GCC=releases/gcc-10.1.0
+__VERSION_NEWLIB=newlib-3.3.0
 __VERSION_UCLIBCPP=v0.2.5
 
 # --------------------------------------------------------------------------------------------------------------------
@@ -88,11 +88,12 @@ mkdir -p $__BUILD_DIR
 
 if [ ! -f $__SRC_DIR/.installed-libs ]; then
   sudo apt install -y build-essential flex bison texinfo autoconf
-  sudo apt install -y linux-headers-amd64
+  sudo apt install -y linux-headers-generic
   sudo apt install -y libgmp-dev libgmp10
-  sudo apt install -y libmpfr-dev libmpfr4
+  sudo apt install -y libmpfr-dev libmpfr6
   sudo apt install -y libmpc-dev libmpc3
   sudo apt install -y zlib1g-dev zlib1g
+  sudo apt install -y python3
 fi
 touch $__SRC_DIR/.installed-libs
 
@@ -112,7 +113,7 @@ function git_checkout() {
 
   cd $directory
   if [ $? -eq 0 ]; then
-    git fetch -f origin $branch || true
+    git fetch -f origin $branch --tags || true
     git reset --hard $branch || git reset --hard refs/tags/$branch
     git clean -dfx
   else
@@ -159,7 +160,7 @@ if [ ! -f .built-gcc ]; then
   __SRC_GCC_MULTILIB=$__SRC_DIR/src-gcc/gcc/config/riscv
   if [ ! -f $__SRC_GCC_MULTILIB/t-elf-multilib64 ]; then
     mv $__SRC_GCC_MULTILIB/t-elf-multilib $__SRC_GCC_MULTILIB/t-elf-multilib64
-    $__SRC_GCC_MULTILIB/multilib-generator ${__OPT_TARGET_MULTILIB} \
+    python3 $__SRC_GCC_MULTILIB/multilib-generator ${__OPT_TARGET_MULTILIB} \
       > $__SRC_GCC_MULTILIB/t-elf-multilib
   fi
 
