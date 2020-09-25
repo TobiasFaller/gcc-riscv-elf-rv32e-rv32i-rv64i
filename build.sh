@@ -5,11 +5,10 @@ set -e -x
 # configuration
 # --------------------------------------------------------------------------------------------------------------------
 
-# Set __OPT_MULTICORE to "" when using WSL because of a multi-threading bug:
+# Set __OPT_MULTICORE to "" when using WSL on Windows Pre Build 17655 because of a multi-threading bug:
 # "Fixed an issue where multithreaded operations could return ENOENT even though the file exists. [GH 2712]"
 # https://docs.microsoft.com/en-us/windows/wsl/release-notes#build-17655-skip-ahead
-__OPT_MULTICORE=-j4
-__OPT_TARGET_PATH=/usr/local/riscv-unknown-elf
+__OPT_MULTICORE=-j$(nproc)
 __OPT_TARGET_PREFIX=riscv-unknown-elf-
 __OPT_TARGET_ARCH=riscv-unknown-elf
 
@@ -26,6 +25,16 @@ __VERSION_GDB=gdb-9.2-release
 __VERSION_GCC=releases/gcc-10.1.0
 __VERSION_NEWLIB=newlib-3.3.0
 __VERSION_UCLIBCPP=v0.2.5
+
+if [[ $# = 0 ]]; then
+    __OPT_TARGET_PATH=/usr/local/riscv-unknown-elf
+elif [[ $# = 1 ]]; then
+    __OPT_TARGET_PATH="$1"
+else
+    echo 'Usage: build.sh <target-path>'
+	echo '\ttarget-path: The prefix to use for the toolchain (installation directory)'
+	exit 1
+fi
 
 # --------------------------------------------------------------------------------------------------------------------
 # initialization
