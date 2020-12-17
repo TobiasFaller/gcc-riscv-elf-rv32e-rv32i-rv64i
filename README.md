@@ -8,24 +8,24 @@ The configuration does not support multi-threading and uses init_array and fini_
 Toolchain Configuration
 -----------------------
 
-| Option                              | Description                                    | Default Value                |
-| ----------------------------------- | ---------------------------------------------- | ---------------------------- |
-| __OPT_TARGET_ARCH                   | Target architecture triplet                    | riscv-unknown-elf            |
-| __OPT_TARGET_MARCH                  | Default target architecture                    | RV64GC                       |
-| __OPT_TARGET_MABI                   | Default target ABI                             | ILP64D                       |
-| __OPT_TARGET_MARCH_FULL             | Maximum target architecture                    | RV64GC                       |
-| __OPT_TARGET_ENABLE_RISCV32E        | Enable RV32E variants                          | yes                          |
-| __OPT_TARGET_ENABLE_RISCV32I        | Enable RV32I variants                          | yes                          |
-| __OPT_TARGET_ENABLE_RISCV64G        | Enable RV64G variants                          | yes                          |
-| __OPT_TARGET_ENABLE_RISCV128G       | Enable RV128G variants                         | no                           |
-| __OPT_TARGET_ENABLE_SINGLE_FLOAT    | Enable single-precision floating-point support | yes                          |
-| __OPT_TARGET_ENABLE_DOUBLE_FLOAT    | Enable double-precision floating-point support | yes                          |
-| __OPT_TARGET_ENABLE_QUAD_FLOAT      | Enable quad-precision floating-point support   | no                           |
-| __OPT_TARGET_ENABLE_ADDITIONAL_ABIS | Enable additional uncommon ABIs                | no                           |
-| __OPT_MULTICORE                     | Makefile max. parallel job count               | -j4                          |
-| __OPT_TARGET_PATH                   | Installation directory                         | /usr/local/riscv-unknown-elf |
-| __OPT_TARGET_PREFIX                 | Program name prefix                            | riscv-unknown-elf-           |
-
+| Option                              | Description                                         | Default Value                |
+| ----------------------------------- | --------------------------------------------------- | ---------------------------- |
+| __OPT_TARGET_ARCH                   | Target architecture triplet                         | riscv-unknown-elf            |
+| __OPT_TARGET_MARCH                  | Default target architecture                         | RV64GC                       |
+| __OPT_TARGET_MABI                   | Default target ABI                                  | ILP64D                       |
+| __OPT_TARGET_MARCH_FULL             | Maximum target architecture                         | RV64GC                       |
+| __OPT_TARGET_ENABLE_RISCV32E        | Enable RV32E variants                               | yes                          |
+| __OPT_TARGET_ENABLE_RISCV32I        | Enable RV32I variants                               | yes                          |
+| __OPT_TARGET_ENABLE_RISCV64G        | Enable RV64G variants                               | yes                          |
+| __OPT_TARGET_ENABLE_RISCV128G       | Enable RV128G variants                              | no                           |
+| __OPT_TARGET_ENABLE_SINGLE_FLOAT    | Enable single-precision floating-point support      | yes                          |
+| __OPT_TARGET_ENABLE_DOUBLE_FLOAT    | Enable double-precision floating-point support      | yes                          |
+| __OPT_TARGET_ENABLE_QUAD_FLOAT      | Enable quad-precision floating-point support        | no                           |
+| __OPT_TARGET_ENABLE_ADDITIONAL_ABIS | Enable additional uncommon ABIs                     | no                           |
+| __OPT_TARGET_PATH                   | Installation directory                              | /usr/local/riscv-unknown-elf |
+| __OPT_TARGET_PREFIX                 | Program name prefix                                 | riscv-unknown-elf-           |
+| __OPT_BUILD_MULTICORE               | Maximum parallel job count for Makefile             | -j$(nproc)                   |
+| __OPT_BUILD_HACKY_MULTICORE         | Patches build files to enable multi-threaded builds | no (might break the build)   |
 
 Instruction Sets:
 
