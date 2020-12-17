@@ -5,35 +5,42 @@ set -e -x
 # configuration
 # --------------------------------------------------------------------------------------------------------------------
 
-# Set __OPT_MULTICORE to "" when using WSL on Windows Pre Build 17655 because of a multi-threading bug:
+# Set __OPT_BUILD_MULTICORE to "" when using WSL on Windows Pre Build 17655 because of a multi-threading bug:
 # "Fixed an issue where multithreaded operations could return ENOENT even though the file exists. [GH 2712]"
 # https://docs.microsoft.com/en-us/windows/wsl/release-notes#build-17655-skip-ahead
-__OPT_MULTICORE=-j$(nproc)
 __OPT_TARGET_PREFIX=riscv-unknown-elf-
 __OPT_TARGET_ARCH=riscv-unknown-elf
 
-__OPT_TARGET_MARCH=rv32imc
-__OPT_TARGET_MABI=ilp32
+__OPT_TARGET_MARCH=rv64gc
+__OPT_TARGET_MABI=lp64d
 __OPT_TARGET_MARCH_FULL=rv64gc
 
 __OPT_TARGET_ENABLE_RISCV32E=yes
 __OPT_TARGET_ENABLE_RISCV32I=yes
 __OPT_TARGET_ENABLE_RISCV64I=yes
+__OPT_TARGET_ENABLE_RISCV128I=no
+__OPT_TARGET_ENABLE_SINGLE_FLOAT=yes
+__OPT_TARGET_ENABLE_DOUBLE_FLOAT=yes
+__OPT_TARGET_ENABLE_QUAD_FLOAT=no
+__OPT_TARGET_ENABLE_ADDITIONAL_ABIS=no
 
-__VERSION_BINUTILS=binutils-2_33_1
-__VERSION_GDB=gdb-9.2-release
-__VERSION_GCC=releases/gcc-10.1.0
-__VERSION_NEWLIB=newlib-3.3.0
+__OPT_BUILD_MULTICORE=-j$(nproc)
+__OPT_BUILD_HACKY_MULTICORE=yes
+
+__VERSION_BINUTILS=binutils-2_35_1
+__VERSION_GDB=gdb-10.1-release
+__VERSION_GCC=releases/gcc-10.2.0
+__VERSION_NEWLIB=newlib-4.0.0
 __VERSION_UCLIBCPP=v0.2.5
 
 if [[ $# = 0 ]]; then
-    __OPT_TARGET_PATH=/usr/local/riscv-unknown-elf
+  __OPT_TARGET_PATH=/usr/local/riscv-unknown-elf
 elif [[ $# = 1 ]]; then
-    __OPT_TARGET_PATH="$1"
+  __OPT_TARGET_PATH="$1"
 else
-    echo 'Usage: build.sh <target-path>'
-	echo '\ttarget-path: The prefix to use for the toolchain (installation directory)'
-	exit 1
+  echo 'Usage: build.sh <target-path>'
+  echo '\ttarget-path: The prefix to use for the toolchain (installation directory)'
+  exit 1
 fi
 
 # --------------------------------------------------------------------------------------------------------------------
@@ -41,47 +48,189 @@ fi
 # --------------------------------------------------------------------------------------------------------------------
 
 __OPT_TARGET_MULTILIB=""
+
+# -----------------------------------------------------------------------------
+# RISC-V 32 BIT (RV32E, RV32I)
+# -----------------------------------------------------------------------------
+
 if [ "yes" == $__OPT_TARGET_ENABLE_RISCV32E ]; then
-__OPT_TARGET_MULTILIB+="
-  rv32e-ilp32e-- rv32ec-ilp32e--
-  rv32em-ilp32e-- rv32emc-ilp32e--
-  rv32ea-ilp32e-- rv32eac-ilp32e--
-  rv32ema-ilp32e-- rv32emac-ilp32e--"
+  # Only the ilp32e ABI is currently supported
+  __OPT_TARGET_MULTILIB+="
+    rv32e-ilp32e-- rv32ec-ilp32e--
+    rv32em-ilp32e-- rv32emc-ilp32e--
+    rv32ea-ilp32e-- rv32eac-ilp32e--
+    rv32ema-ilp32e-- rv32emac-ilp32e--"
+
+  if [ "yes" == $__OPT_TARGET_ENABLE_ADDITIONAL_ABIS ]; then
+    if [ "yes" == $__OPT_TARGET_ENABLE_SINGLE_FLOAT ]; then
+      : # Waiting for Zfinx extension to be specified for floating-point values stored in integer registers
+    fi
+    if [ "yes" == $__OPT_TARGET_ENABLE_DOUBLE_FLOAT ]; then
+      : # Waiting for Zfinx extension to be specified for floating-point values stored in integer registers
+   fi
+  fi
 fi
+
 if [ "yes" == $__OPT_TARGET_ENABLE_RISCV32I ]; then
-__OPT_TARGET_MULTILIB+="
-  rv32i-ilp32-- rv32ic-ilp32--
-  rv32im-ilp32-- rv32imc-ilp32--
-  rv32ia-ilp32-- rv32iac-ilp32--
-  rv32ima-ilp32-- rv32imac-ilp32--
+  # ilp32, ilp32f, ilp32d, (ilp32q) supported
+  __OPT_TARGET_MULTILIB+="
+    rv32i-ilp32-- rv32ic-ilp32--
+    rv32im-ilp32-- rv32imc-ilp32--
+    rv32ia-ilp32-- rv32iac-ilp32--
+    rv32ima-ilp32-- rv32imac-ilp32--"
 
-  rv32if-ilp32f-- rv32ifc-ilp32f--
-  rv32imf-ilp32f-- rv32imfc-ilp32f--
-  rv32iaf-ilp32f-- rv32iafc-ilp32f--
-  rv32imaf-ilp32f-- rv32imafc-ilp32f--
+  if [ "yes" == $__OPT_TARGET_ENABLE_SINGLE_FLOAT ]; then
+    __OPT_TARGET_MULTILIB+="
+      rv32if-ilp32f-- rv32ifc-ilp32f--
+      rv32imf-ilp32f-- rv32imfc-ilp32f--
+      rv32iaf-ilp32f-- rv32iafc-ilp32f--
+      rv32imaf-ilp32f-- rv32imafc-ilp32f--"
 
-  rv32ifd-ilp32d-- rv32ifdc-ilp32d--
-  rv32imfd-ilp32d-- rv32imfdc-ilp32d--
-  rv32iafd-ilp32d-- rv32iafdc-ilp32d--
-  rv32g-ilp32d-- rv32gc-ilp32d--"
+    if [ "yes" == $__OPT_TARGET_ENABLE_ADDITIONAL_ABIS ]; then
+      __OPT_TARGET_MULTILIB+="
+        rv32if-ilp32-- rv32ifc-ilp32--
+        rv32imf-ilp32-- rv32imfc-ilp32--
+        rv32iaf-ilp32-- rv32iafc-ilp32--
+        rv32imaf-ilp32-- rv32imafc-ilp32--"
+    fi
+  fi
+
+  if [ "yes" == $__OPT_TARGET_ENABLE_DOUBLE_FLOAT ]; then
+    __OPT_TARGET_MULTILIB+="
+      rv32ifd-ilp32d-- rv32ifdc-ilp32d--
+      rv32imfd-ilp32d-- rv32imfdc-ilp32d--
+      rv32iafd-ilp32d-- rv32iafdc-ilp32d--
+      rv32g-ilp32d-- rv32gc-ilp32d--"
+
+    if [ "yes" == $__OPT_TARGET_ENABLE_ADDITIONAL_ABIS ]; then
+      __OPT_TARGET_MULTILIB+="
+        rv32ifd-ilp32-- rv32ifdc-ilp32--
+        rv32imfd-ilp32-- rv32imfdc-ilp32--
+        rv32iafd-ilp32-- rv32iafdc-ilp32--
+        rv32g-ilp32-- rv32gc-ilp32--
+
+        rv32ifd-ilp32f-- rv32ifdc-ilp32f--
+        rv32imfd-ilp32f-- rv32imfdc-ilp32f--
+        rv32iafd-ilp32f-- rv32iafdc-ilp32f--
+        rv32g-ilp32f-- rv32gc-ilp32f--"
+    fi
+  fi
+
+  if [ "yes" == $__OPT_TARGET_ENABLE_QUAD_FLOAT ]; then
+    # Does not seem to exist yet
+    __OPT_TARGET_MULTILIB+="
+      rv32ifdq-ilp32q-- rv32ifdqc-ilp32q--
+      rv32imfdq-ilp32q-- rv32imfdqc-ilp32q--
+      rv32iafdq-ilp32q-- rv32iafdqc-ilp32q--
+      rv32gq-ilp32q-- rv32gqc-ilp32q--"
+
+    if [ "yes" == $__OPT_TARGET_ENABLE_ADDITIONAL_ABIS ]; then
+      __OPT_TARGET_MULTILIB+="
+        rv32ifdq-ilp32-- rv32ifdqc-ilp32--
+        rv32imfdq-ilp32-- rv32imfdqc-ilp32--
+        rv32iafdq-ilp32-- rv32iafdqc-ilp32--
+        rv32gq-ilp32-- rv32gqc-ilp32--
+
+        rv32ifdq-ilp32f-- rv32ifdqc-ilp32f--
+        rv32imfdq-ilp32f-- rv32imfdqc-ilp32f--
+        rv32iafdq-ilp32f-- rv32iafdqc-ilp32f--
+        rv32gq-ilp32f-- rv32gqc-ilp32f--
+
+        rv32ifdq-ilp32d-- rv32ifdqc-ilp32d--
+        rv32imfdq-ilp32d-- rv32imfdqc-ilp32d--
+        rv32iafdq-ilp32d-- rv32iafdqc-ilp32d--
+        rv32gq-ilp32d-- rv32gqc-ilp32d--"
+    fi
+  fi
 fi
+
+# -----------------------------------------------------------------------------
+# RISC-V 64 BIT (RV64I)
+# -----------------------------------------------------------------------------
+
 if [ "yes" == $__OPT_TARGET_ENABLE_RISCV64I ]; then
 __OPT_TARGET_MULTILIB+="
   rv64i-lp64-- rv64ic-lp64--
   rv64im-lp64-- rv64imc-lp64--
   rv64ia-lp64-- rv64iac-lp64--
-  rv64ima-lp64-- rv64imac-lp64--
+  rv64ima-lp64-- rv64imac-lp64--"
 
-  rv64if-lp64f-- rv64ifc-lp64f--
-  rv64imf-lp64f-- rv64imfc-lp64f--
-  rv64iaf-lp64f-- rv64iafc-lp64f--
-  rv64imaf-lp64f-- rv64imafc-lp64f--
+  if [ "yes" == $__OPT_TARGET_ENABLE_SINGLE_FLOAT ]; then
+    __OPT_TARGET_MULTILIB+="
+      rv64if-lp64f-- rv64ifc-lp64f--
+      rv64imf-lp64f-- rv64imfc-lp64f--
+      rv64iaf-lp64f-- rv64iafc-lp64f--
+      rv64imaf-lp64f-- rv64imafc-lp64f--"
 
-  rv64ifd-lp64d-- rv64ifdc-lp64d--
-  rv64imfd-lp64d-- rv64imfdc-lp64d--
-  rv64iafd-lp64d-- rv64iafdc-lp64d--
-  rv64g-lp64d-- rv64gc-lp64d--"
+    if [ "yes" == $__OPT_TARGET_ENABLE_ADDITIONAL_ABIS ]; then
+      __OPT_TARGET_MULTILIB+="
+        rv64if-lp64-- rv64ifc-lp64--
+        rv64imf-lp64-- rv64imfc-lp64--
+        rv64iaf-lp64-- rv64iafc-lp64--
+        rv64imaf-lp64-- rv64imafc-lp64--"
+    fi
+  fi
+
+  if [ "yes" == $__OPT_TARGET_ENABLE_DOUBLE_FLOAT ]; then
+    __OPT_TARGET_MULTILIB+="
+      rv64ifd-lp64d-- rv64ifdc-lp64d--
+      rv64imfd-lp64d-- rv64imfdc-lp64d--
+      rv64iafd-lp64d-- rv64iafdc-lp64d--
+      rv64g-lp64d-- rv64gc-lp64d--"
+
+    if [ "yes" == $__OPT_TARGET_ENABLE_ADDITIONAL_ABIS ]; then
+      __OPT_TARGET_MULTILIB+="
+        rv64ifd-lp64-- rv64ifdc-lp64--
+        rv64imfd-lp64-- rv64imfdc-lp64--
+        rv64iafd-lp64-- rv64iafdc-lp64--
+        rv64g-lp64-- rv64gc-lp64--
+
+        rv64ifd-lp64f-- rv64ifdc-lp64f--
+        rv64imfd-lp64f-- rv64imfdc-lp64f--
+        rv64iafd-lp64f-- rv64iafdc-lp64f--
+        rv64g-lp64f-- rv64gc-lp64f--"
+    fi
+  fi
+
+  if [ "yes" == $__OPT_TARGET_ENABLE_QUAD_FLOAT ]; then
+    # Does not seem to exist yet
+    __OPT_TARGET_MULTILIB+="
+      rv64ifdq-lp64q-- rv64ifdqc-lp64q--
+      rv64imfdq-lp64q-- rv64imfdqc-lp64q--
+      rv64iafdq-lp64q-- rv64iafdqc-lp64q--
+      rv64gq-lp64q-- rv64gqc-lp64q--"
+
+    if [ "yes" == $__OPT_TARGET_ENABLE_ADDITIONAL_ABIS ]; then
+      __OPT_TARGET_MULTILIB+="
+        rv64ifdq-lp64-- rv64ifdqc-lp64--
+        rv64imfdq-lp64-- rv64imfdqc-lp64--
+        rv64iafdq-lp64-- rv64iafdqc-lp64--
+        rv64gq-lp64-- rv64gqc-lp64--
+
+        rv64ifdq-lp64f-- rv64ifdqc-lp64f--
+        rv64imfdq-lp64f-- rv64imfdqc-lp64f--
+        rv64iafdq-lp64f-- rv64iafdqc-lp64f--
+        rv64gq-lp64f-- rv64gqc-lp64f--
+
+        rv64ifdq-lp64d-- rv64ifdqc-lp64d--
+        rv64imfdq-lp64d-- rv64imfdqc-lp64d--
+        rv64iafdq-lp64d-- rv64iafdqc-lp64d--
+        rv64gq-lp64d-- rv64gqc-lp64d--"
+    fi
+  fi
 fi
+
+# -----------------------------------------------------------------------------
+# RISC-V 128 BIT (RV128I)
+# -----------------------------------------------------------------------------
+
+if [ "yes" == $__OPT_TARGET_ENABLE_RISCV128I ]; then
+  : # Waiting for RV128 specification / GCC
+fi
+
+# -----------------------------------------------------------------------------
+# directories
+# -----------------------------------------------------------------------------
 
 export PATH=$PATH:${__OPT_TARGET_PATH}/bin
 __ROOT_DIR=`pwd`
@@ -155,8 +304,8 @@ if [ ! -f .built-binutils ]; then
     --enable-lto --disable-nls --disable-wchar_t \
     --enable-initfini-array --without-gdb
 
-  make all ${__OPT_MULTICORE}
-  make install ${__OPT_MULTICORE}
+  make all ${__OPT_BUILD_MULTICORE}
+  make install ${__OPT_BUILD_MULTICORE}
 fi
 touch $__BUILD_DIR/.built-binutils
 
@@ -169,9 +318,11 @@ if [ ! -f .built-gcc ]; then
   __SRC_GCC_MULTILIB=$__SRC_DIR/src-gcc/gcc/config/riscv
   if [ ! -f $__SRC_GCC_MULTILIB/t-elf-multilib64 ]; then
     mv $__SRC_GCC_MULTILIB/t-elf-multilib $__SRC_GCC_MULTILIB/t-elf-multilib64
-    python3 $__SRC_GCC_MULTILIB/multilib-generator ${__OPT_TARGET_MULTILIB} \
-      > $__SRC_GCC_MULTILIB/t-elf-multilib
   fi
+
+  # Generate new multilib list
+  python3 $__SRC_GCC_MULTILIB/multilib-generator ${__OPT_TARGET_MULTILIB} \
+    > $__SRC_GCC_MULTILIB/t-elf-multilib
 
   rm -rf build-gcc || true
   mkdir build-gcc && cd build-gcc
@@ -186,8 +337,8 @@ if [ ! -f .built-gcc ]; then
     --disable-shared --disable-libssp \
     --with-system-zlib --with-gnu-as --with-gnu-ld
 
-  make all-gcc ${__OPT_MULTICORE}
-  make install-gcc ${__OPT_MULTICORE}
+  make all-gcc ${__OPT_BUILD_MULTICORE}
+  make install-gcc ${__OPT_BUILD_MULTICORE}
 fi
 touch $__BUILD_DIR/.built-gcc
 
@@ -375,8 +526,65 @@ if [ ! -f .built-newlib ]; then
     --enable-newlib-global-atexit --enable-newlib-register-fini \
     --disable-newlib-multithread
 
-  make all ${__OPT_MULTICORE}
-  make install ${__OPT_MULTICORE}
+  if [ "yes" == $__OPT_BUILD_HACKY_MULTICORE ]; then
+    # Patch newlib-sources/config-ml.in to use parallel for-loops for configuration and compilation
+    patch --forward --force $__SRC_DIR/src-newlib/config-ml.in <<"EOF" || true
+--- <config-ml.in>
++++ <config-ml.in>
+@@ -503,7 +503,7 @@
+ 	    else \
+ 	      if [ -d ../$${dir}/$${lib} ]; then \
+ 		flags=`echo $$i | sed -e 's/^[^;]*;//' -e 's/@/ -/g'`; \
+-		if (cd ../$${dir}/$${lib}; $(MAKE) $(FLAGS_TO_PASS) \
++		(cd ../$${dir}/$${lib}; $(MAKE) $(FLAGS_TO_PASS) \
+ 				CFLAGS="$(CFLAGS) $${flags}" \
+ 				CCASFLAGS="$(CCASFLAGS) $${flags}" \
+ 				FCFLAGS="$(FCFLAGS) $${flags}" \
+@@ -523,15 +523,11 @@
+ 				INSTALL_DATA="$(INSTALL_DATA)" \
+ 				INSTALL_PROGRAM="$(INSTALL_PROGRAM)" \
+ 				INSTALL_SCRIPT="$(INSTALL_SCRIPT)" \
+-				$(DO)); then \
+-		  true; \
+-		else \
+-		  exit 1; \
+-		fi; \
++				$(DO)) & \
+ 	      else true; \
+ 	      fi; \
+ 	    fi; \
+-	  done; \
++	  done; wait; \
+ 	fi
+ 
+ # FIXME: There should be an @-sign in front of the `if'.
+@@ -660,8 +656,7 @@
+   # cd to top-level-build-dir/${with_target_subdir}
+   cd ..
+ 
+-  for ml_dir in ${multidirs}; do
+-
++  for ml_dir in ${multidirs}; do (
+     if [ "${ml_verbose}" = --verbose ]; then
+       echo "Running configure in multilib subdir ${ml_dir}"
+       echo "pwd: `${PWDCMD-pwd}`"
+@@ -874,9 +869,8 @@
+       exit 1
+     fi
+ 
+-    cd "${ML_POPDIR}"
+-
+-  done
++    cd "${ML_POPDIR}" )&
++  done; wait
+ 
+   cd "${ml_origdir}"
+ fi
+EOF
+  fi
+
+  make all ${__OPT_BUILD_MULTICORE}
+  make install ${__OPT_BUILD_MULTICORE}
 fi
 touch $__BUILD_DIR/.built-newlib
 
@@ -406,8 +614,8 @@ if [ ! -f .built-gcc-stage2 ]; then
     --disable-shared --disable-libssp \
     --with-system-zlib --with-gnu-as --with-gnu-ld
 
-  make all ${__OPT_MULTICORE}
-  make install ${__OPT_MULTICORE}
+  make all ${__OPT_BUILD_MULTICORE}
+  make install ${__OPT_BUILD_MULTICORE}
 fi
 touch $__BUILD_DIR/.built-gcc-stage2
 
@@ -503,8 +711,20 @@ if [ ! -f .built-uclibc++ ]; then
   for type in ${__OPT_TARGET_MULTILIB}; do
     march=`echo $type | sed 's/\(.*\)-\(.*\)--/\1/'`
     mabi=`echo $type | sed 's/\(.*\)-\(.*\)--/\2/'`
-    build_uclibcpp $march $mabi
+
+    if [ "yes" == $__OPT_BUILD_HACKY_MULTICORE ]; then
+      __BUILD_UCLIBCPP_DIR=$__BUILD_DIR/build-uclibc++/$type
+      mkdir -p $__BUILD_UCLIBCPP_DIR && cp -r . $__BUILD_UCLIBCPP_DIR
+      (cd $__BUILD_UCLIBCPP_DIR && build_uclibcpp $march $mabi) &
+    else
+      build_uclibcpp $march $mabi
+    fi
   done;
+
+  if [ "yes" == $__OPT_BUILD_HACKY_MULTICORE ]; then
+    # Wait for all build workers to finish
+    wait < <(jobs -p)
+  fi
 
   # Build default version last
   build_uclibcpp '' ''
