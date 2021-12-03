@@ -612,7 +612,7 @@ if [ ! -f .built-gcc-stage2 ]; then
     --enable-lto --enable-multilib --enable-initfini-array \
     --disable-nls --disable-wchar_t --disable-threads --disable-libstdcxx \
     --disable-shared --disable-libssp \
-    --with-system-zlib --with-gnu-as --with-gnu-ld
+    --with-system-zlib --with-gnu-as --with-gnu-ld --enable-gold
 
   make all ${__OPT_BUILD_MULTICORE}
   make install ${__OPT_BUILD_MULTICORE}
