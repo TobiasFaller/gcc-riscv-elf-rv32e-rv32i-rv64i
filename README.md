@@ -56,6 +56,15 @@ Toolchain Version
 | Newlib C Library (Newlib)         | 4.1.0   | 2020-12-18 18:50 | [Link](https://sourceware.org/newlib/)         | [Link](http://sourceware.org/git/newlib-cygwin.git) |
 | uCLibc++                          | 0.2.5   | 2019-04-06 17:20 | [Link](https://cxx.uclibc.org/)                | [Link](http://git.busybox.net/uClibc++)             |
 
+Requirements
+------------
+
+Build of RV64GC with all ABIs on Ryzen 3950X (16 Cores):
+
+- Disk Space: 15 GiB (Build) / 3 GiB (Installed)
+- Memory: 16 GiB (+ 16 GiB when using tmpfs for build directory)
+- Build Time: 12 min (with hacky multi-core)
+
 RV32E (Draft)
 -------------
 
