@@ -25,7 +25,7 @@ Toolchain Configuration
 | __OPT_TARGET_PATH                   | Installation directory                              | /usr/local/riscv-unknown-elf |
 | __OPT_TARGET_PREFIX                 | Program name prefix                                 | riscv-unknown-elf-           |
 | __OPT_BUILD_MULTICORE               | Maximum parallel job count for Makefile             | -j$(nproc)                   |
-| __OPT_BUILD_HACKY_MULTICORE         | Patches build files to enable multi-threaded builds | no (might break the build)   |
+| __OPT_BUILD_HACKY_MULTICORE         | Patches build files to enable multi-threaded builds | yes (might break the build)  |
 | __OPT_INSTALL_DEPENDENCIES          | Install dependencies required for build             | yes                          |
 
 Instruction Sets:
