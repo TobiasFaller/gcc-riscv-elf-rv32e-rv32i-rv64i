@@ -27,10 +27,10 @@ __OPT_TARGET_ENABLE_ADDITIONAL_ABIS=no
 __OPT_BUILD_MULTICORE=-j$(nproc)
 __OPT_BUILD_HACKY_MULTICORE=yes
 
-__VERSION_BINUTILS=binutils-2_35_1
-__VERSION_GDB=gdb-10.1-release
-__VERSION_GCC=releases/gcc-10.2.0
-__VERSION_NEWLIB=newlib-4.0.0
+__VERSION_BINUTILS=binutils-2_37
+__VERSION_GDB=gdb-11.1-release
+__VERSION_GCC=releases/gcc-11.2.0
+__VERSION_NEWLIB=newlib-4.1.0
 __VERSION_UCLIBCPP=v0.2.5
 
 if [[ $# = 0 ]]; then
@@ -244,16 +244,19 @@ mkdir -p $__BUILD_DIR
 # installation
 # --------------------------------------------------------------------------------------------------------------------
 
-if [ ! -f $__SRC_DIR/.installed-libs ]; then
-  sudo apt install -y build-essential flex bison texinfo autoconf
-  sudo apt install -y linux-headers-generic
-  sudo apt install -y libgmp-dev libgmp10
-  sudo apt install -y libmpfr-dev libmpfr6
-  sudo apt install -y libmpc-dev libmpc3
-  sudo apt install -y zlib1g-dev zlib1g
-  sudo apt install -y python3
+if [ "yes" == $__OPT_INSTALL_DEPENDENCIES ]; then
+  if [ ! -f $__SRC_DIR/.installed-libs ]; then
+    # TODO: Add switch-case for OS
+    which apt-get && \
+    sudo apt-get install -y \
+      build-essential linux-headers-generic flex bison texinfo autoconf python3 \
+      libgmp-dev libgmp10 \
+      libmpfr-dev libmpfr6 \
+      libmpc-dev libmpc3 \
+      zlib1g-dev zlib1g
+  fi
+  touch $__SRC_DIR/.installed-libs
 fi
-touch $__SRC_DIR/.installed-libs
 
 # --------------------------------------------------------------------------------------------------------------------
 # sources
@@ -612,7 +615,7 @@ if [ ! -f .built-gcc-stage2 ]; then
     --enable-lto --enable-multilib --enable-initfini-array \
     --disable-nls --disable-wchar_t --disable-threads --disable-libstdcxx \
     --disable-shared --disable-libssp \
-    --with-system-zlib --with-gnu-as --with-gnu-ld
+    --with-system-zlib --with-gnu-as --with-gnu-ld --enable-gold
 
   make all ${__OPT_BUILD_MULTICORE}
   make install ${__OPT_BUILD_MULTICORE}
