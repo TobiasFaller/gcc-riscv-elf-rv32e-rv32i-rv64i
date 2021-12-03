@@ -1,4 +1,4 @@
-RISC-V RV32E / RV32I / RV64I ELF (Last updated: 2020.12.16)
+RISC-V RV32E / RV32I / RV64I ELF (Last updated: 2021.12.03)
 ===========================================================
 
 Build script to build the current GCC toolchain from source with riscv-unknown-elf bare-metal as target with ilp32e / ilp32 and ilp64 ABI.
@@ -26,6 +26,7 @@ Toolchain Configuration
 | __OPT_TARGET_PREFIX                 | Program name prefix                                 | riscv-unknown-elf-           |
 | __OPT_BUILD_MULTICORE               | Maximum parallel job count for Makefile             | -j$(nproc)                   |
 | __OPT_BUILD_HACKY_MULTICORE         | Patches build files to enable multi-threaded builds | no (might break the build)   |
+| __OPT_INSTALL_DEPENDENCIES          | Install dependencies required for build             | yes                          |
 
 Instruction Sets:
 
@@ -49,10 +50,10 @@ Toolchain Version
 
 | Software / Library                | Version | Date             | Homepage                                       | Git Repository                                      |
 | --------------------------------- | ------- | ---------------- | ---------------------------------------------- | --------------------------------------------------- |
-| The GNU Binutils (Binutils)       | 2.35.1  | 2020-09-19 10:36 | [Link](https://www.gnu.org/software/binutils/) | [Link](http://sourceware.org/git/binutils-gdb.git)  |
-| The GNU Project Debugger (GDB)    | 10.1    | 2020-10-24 04:23 | [Link](https://www.gnu.org/software/gdb/)      | [Link](http://sourceware.org/git/binutils-gdb.git)  |
-| The GNU Compiler Collection (GCC) | 10.2.0  | 2020-07-23 06:35 | [Link](https://gcc.gnu.org/)                   | [Link](http://gcc.gnu.org/git/gcc.git)              |
-| Newlib C Library (Newlib)         | 4.0.0   | 2020-11-17 21:47 | [Link](https://sourceware.org/newlib/)         | [Link](http://sourceware.org/git/newlib-cygwin.git) |
+| The GNU Binutils (Binutils)       | 2.37    | 2021-07-18 17:46 | [Link](https://www.gnu.org/software/binutils/) | [Link](http://sourceware.org/git/binutils-gdb.git)  |
+| The GNU Project Debugger (GDB)    | 11.1    | 2021-09-13 18:32 | [Link](https://www.gnu.org/software/gdb/)      | [Link](http://sourceware.org/git/binutils-gdb.git)  |
+| The GNU Compiler Collection (GCC) | 11.2.0  | 2021-09-28 06:55 | [Link](https://gcc.gnu.org/)                   | [Link](http://gcc.gnu.org/git/gcc.git)              |
+| Newlib C Library (Newlib)         | 4.1.0   | 2020-12-18 18:50 | [Link](https://sourceware.org/newlib/)         | [Link](http://sourceware.org/git/newlib-cygwin.git) |
 | uCLibc++                          | 0.2.5   | 2019-04-06 17:20 | [Link](https://cxx.uclibc.org/)                | [Link](http://git.busybox.net/uClibc++)             |
 
 RV32E (Draft)
