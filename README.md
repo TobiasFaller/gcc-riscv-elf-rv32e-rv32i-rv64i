@@ -1,4 +1,4 @@
-RISC-V RV32E / RV32I / RV64I ELF (Last updated: 2021.12.03)
+RISC-V RV32E / RV32I / RV64I ELF (Last updated: 2025.08.03)
 ===========================================================
 
 Build script to build the current GCC toolchain from source with riscv-unknown-elf bare-metal as target with ilp32e / ilp32 and ilp64 ABI.
@@ -50,10 +50,10 @@ Toolchain Version
 
 | Software / Library                | Version | Date             | Homepage                                       | Git Repository                                      |
 | --------------------------------- | ------- | ---------------- | ---------------------------------------------- | --------------------------------------------------- |
-| The GNU Binutils (Binutils)       | 2.37    | 2021-07-18 17:46 | [Link](https://www.gnu.org/software/binutils/) | [Link](http://sourceware.org/git/binutils-gdb.git)  |
-| The GNU Project Debugger (GDB)    | 11.1    | 2021-09-13 18:32 | [Link](https://www.gnu.org/software/gdb/)      | [Link](http://sourceware.org/git/binutils-gdb.git)  |
-| The GNU Compiler Collection (GCC) | 11.2.0  | 2021-09-28 06:55 | [Link](https://gcc.gnu.org/)                   | [Link](http://gcc.gnu.org/git/gcc.git)              |
-| Newlib C Library (Newlib)         | 4.1.0   | 2020-12-18 18:50 | [Link](https://sourceware.org/newlib/)         | [Link](http://sourceware.org/git/newlib-cygwin.git) |
+| The GNU Binutils (Binutils)       | 2.45    | 2025-07-27 09:56 | [Link](https://www.gnu.org/software/binutils/) | [Link](http://sourceware.org/git/binutils-gdb.git)  |
+| The GNU Project Debugger (GDB)    | 16.3    | 2025-04-20 10:22 | [Link](https://www.gnu.org/software/gdb/)      | [Link](http://sourceware.org/git/binutils-gdb.git)  |
+| The GNU Compiler Collection (GCC) | 15.1.0  | 2025-04-25 08:21 | [Link](https://gcc.gnu.org/)                   | [Link](http://gcc.gnu.org/git/gcc.git)              |
+| Newlib C Library (Newlib)         | 4.5.0   | 2025-01-01 20:35 | [Link](https://sourceware.org/newlib/)         | [Link](http://sourceware.org/git/newlib-cygwin.git) |
 | uCLibc++                          | 0.2.5   | 2019-04-06 17:20 | [Link](https://cxx.uclibc.org/)                | [Link](http://git.busybox.net/uClibc++)             |
 
 Requirements

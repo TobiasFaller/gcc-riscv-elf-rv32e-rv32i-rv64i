@@ -27,10 +27,10 @@ __OPT_TARGET_ENABLE_ADDITIONAL_ABIS=no
 __OPT_BUILD_MULTICORE=-j$(nproc)
 __OPT_BUILD_HACKY_MULTICORE=yes
 
-__VERSION_BINUTILS=binutils-2_37
-__VERSION_GDB=gdb-11.1-release
-__VERSION_GCC=releases/gcc-11.2.0
-__VERSION_NEWLIB=newlib-4.1.0
+__VERSION_BINUTILS=binutils-2_45
+__VERSION_GDB=gdb-16.3-release
+__VERSION_GCC=releases/gcc-15.1.0
+__VERSION_NEWLIB=newlib-4.5.0
 __VERSION_UCLIBCPP=v0.2.5
 
 if [[ $# = 0 ]]; then
