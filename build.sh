@@ -8,30 +8,32 @@ set -e -x
 # Set __OPT_BUILD_MULTICORE to "" when using WSL on Windows Pre Build 17655 because of a multi-threading bug:
 # "Fixed an issue where multithreaded operations could return ENOENT even though the file exists. [GH 2712]"
 # https://docs.microsoft.com/en-us/windows/wsl/release-notes#build-17655-skip-ahead
-__OPT_TARGET_PREFIX=riscv-unknown-elf-
-__OPT_TARGET_ARCH=riscv-unknown-elf
+__OPT_TARGET_PREFIX=${__OPT_TARGET_PREFIX:=riscv-unknown-elf-}
+__OPT_TARGET_ARCH=${__OPT_TARGET_ARCH:=riscv-unknown-elf}
 
-__OPT_TARGET_MARCH=rv64gc
-__OPT_TARGET_MABI=lp64d
-__OPT_TARGET_MARCH_FULL=rv64gc
+__OPT_TARGET_MARCH=${__OPT_TARGET_MARCH:=rv64gc}
+__OPT_TARGET_MABI=${__OPT_TARGET_MABI:=lp64d}
+__OPT_TARGET_MARCH_FULL=${__OPT_TARGET_MARCH_FULL:=rv64gc}
 
-__OPT_TARGET_ENABLE_RISCV32E=yes
-__OPT_TARGET_ENABLE_RISCV32I=yes
-__OPT_TARGET_ENABLE_RISCV64I=yes
-__OPT_TARGET_ENABLE_RISCV128I=no
-__OPT_TARGET_ENABLE_SINGLE_FLOAT=yes
-__OPT_TARGET_ENABLE_DOUBLE_FLOAT=yes
-__OPT_TARGET_ENABLE_QUAD_FLOAT=no
-__OPT_TARGET_ENABLE_ADDITIONAL_ABIS=no
+__OPT_TARGET_ENABLE_RISCV32E=${__OPT_TARGET_ENABLE_RISCV32E:=yes}
+__OPT_TARGET_ENABLE_RISCV32I=${__OPT_TARGET_ENABLE_RISCV32I:=yes}
+__OPT_TARGET_ENABLE_RISCV64I=${__OPT_TARGET_ENABLE_RISCV64I:=yes}
+__OPT_TARGET_ENABLE_RISCV128I=${__OPT_TARGET_ENABLE_RISCV128I:=no}
+__OPT_TARGET_ENABLE_SINGLE_FLOAT=${__OPT_TARGET_ENABLE_SINGLE_FLOAT:=yes}
+__OPT_TARGET_ENABLE_DOUBLE_FLOAT=${__OPT_TARGET_ENABLE_DOUBLE_FLOAT:=yes}
+__OPT_TARGET_ENABLE_QUAD_FLOAT=${__OPT_TARGET_ENABLE_QUAD_FLOAT:=no}
+__OPT_TARGET_ENABLE_ADDITIONAL_ABIS=${__OPT_TARGET_ENABLE_ADDITIONAL_ABIS:=no}
 
-__OPT_BUILD_MULTICORE=-j$(nproc)
-__OPT_BUILD_HACKY_MULTICORE=yes
+__OPT_BUILD_MULTICORE=${__OPT_BUILD_MULTICORE:=-j$(nproc)}
+__OPT_BUILD_HACKY_MULTICORE=${__OPT_BUILD_HACKY_MULTICORE:=yes}
+__OPT_INSTALL_DEPENDENCIES=${__OPT_INSTALL_DEPENDENCIES:=yes}
 
-__VERSION_BINUTILS=binutils-2_45
-__VERSION_GDB=gdb-16.3-release
-__VERSION_GCC=releases/gcc-15.1.0
-__VERSION_NEWLIB=newlib-4.5.0
-__VERSION_UCLIBCPP=v0.2.5
+__VERSION_BINUTILS=${__VERSION_BINUTILS:=binutils-2_45}
+__VERSION_GCC=${__VERSION_GCC:=releases/gcc-15.1.0}
+__VERSION_NEWLIB=${__VERSION_NEWLIB:=newlib-4.5.0}
+__VERSION_UCLIBCPP=${__VERSION_UCLIBCPP:=v0.2.5}
+__VERSION_GDB=${__VERSION_GDB:=gdb-16.3-release}
+__VERSION_OPENOCD=${__VERSION_OPENOCD:=v0.12.0}
 
 if [[ $# = 0 ]]; then
   __OPT_TARGET_PATH=/usr/local/riscv-unknown-elf
@@ -249,11 +251,12 @@ if [ "yes" == $__OPT_INSTALL_DEPENDENCIES ]; then
     # TODO: Add switch-case for OS
     which apt-get && \
     sudo apt-get install -y \
-      build-essential linux-headers-generic flex bison texinfo autoconf python3 \
+      build-essential linux-headers-generic flex bison texinfo autoconf python3 asciidoc \
       libgmp-dev libgmp10 \
       libmpfr-dev libmpfr6 \
       libmpc-dev libmpc3 \
-      zlib1g-dev zlib1g
+      zlib1g-dev zlib1g \
+      libusb-1.0.0-dev libusb-1.0.0
   fi
   touch $__SRC_DIR/.installed-libs
 fi
@@ -268,14 +271,13 @@ function git_checkout() {
   repository=$3
 
   if [ ! -d $directory ]; then
-    git clone --config core.autocrlf=input --depth 1 --branch $branch $repository $directory \
-      && cd $directory && git checkout -b $branch
+    git clone --config core.autocrlf=input --depth 1 --branch $branch $repository $directory
   fi
 
   cd $directory
   if [ $? -eq 0 ]; then
-    git fetch -f origin $branch --tags || true
-    git reset --hard $branch || git reset --hard refs/tags/$branch
+    git fetch -f origin refs/heads/$branch || git fetch -f origin refs/tags/$branch
+    git reset --hard refs/heads/$branch -- || git reset --hard refs/tags/$branch --
     git clean -dfx
   else
     exit 1;
@@ -284,10 +286,11 @@ function git_checkout() {
 
 if [ ! -f $__SRC_DIR/.installed-sources ]; then
   git_checkout $__SRC_DIR/'src-binutils' $__VERSION_BINUTILS 'git://sourceware.org/git/binutils-gdb.git'
-  git_checkout $__SRC_DIR/'src-gdb' $__VERSION_GDB 'git://sourceware.org/git/binutils-gdb.git'
   git_checkout $__SRC_DIR/'src-gcc' $__VERSION_GCC 'git://gcc.gnu.org/git/gcc.git'
   git_checkout $__SRC_DIR/'src-newlib' $__VERSION_NEWLIB 'git://sourceware.org/git/newlib-cygwin.git'
   git_checkout $__SRC_DIR/'src-uclibc++' $__VERSION_UCLIBCPP 'git://git.busybox.net/uClibc++'
+  git_checkout $__SRC_DIR/'src-gdb' $__VERSION_GDB 'git://sourceware.org/git/binutils-gdb.git'
+  git_checkout $__SRC_DIR/'src-openocd' $__VERSION_OPENOCD 'git://git.code.sf.net/p/openocd/code'
 fi
 touch $__SRC_DIR/.installed-sources
 
@@ -739,6 +742,39 @@ if [ ! -f .built-uclibc++ ]; then
   done;
 fi
 touch $__BUILD_DIR/.built-uclibc++ | true
+
+cd $__BUILD_DIR
+if [ ! -f .built-gdb ]; then
+  rm -rf build-gdb || true
+  mkdir build-gdb && cd build-gdb
+  $__SRC_DIR/src-gdb/configure \
+    --target=${__OPT_TARGET_ARCH} \
+    --prefix=${__OPT_TARGET_PATH} \
+    --program-prefix=${__OPT_TARGET_PREFIX}
+
+  make all-gdb all-gdbserver ${__OPT_BUILD_MULTICORE}
+  make install-gdb install-gdbserver ${__OPT_BUILD_MULTICORE}
+fi
+touch $__BUILD_DIR/.built-gdb
+
+cd $__BUILD_DIR
+if [ ! -f .built-openocd ]; then
+  cd $__SRC_DIR/src-openocd
+  ./bootstrap
+  git submodule update --init
+  cd $__BUILD_DIR
+
+  rm -rf build-openocd || true
+  mkdir build-openocd && cd build-openocd
+  $__SRC_DIR/src-openocd/configure \
+    --target=${__OPT_TARGET_ARCH} \
+    --prefix=${__OPT_TARGET_PATH} \
+    --program-prefix=${__OPT_TARGET_PREFIX} \
+    --enable-internal-jimtcl
+  make ${__OPT_BUILD_MULTICORE}
+  make install ${__OPT_BUILD_MULTICORE}
+fi
+touch $__BUILD_DIR/.built-openocd
 
 cd $__BUILD_DIR
 echo "Done"
