@@ -24,6 +24,13 @@ __OPT_TARGET_ENABLE_DOUBLE_FLOAT=${__OPT_TARGET_ENABLE_DOUBLE_FLOAT:=yes}
 __OPT_TARGET_ENABLE_QUAD_FLOAT=${__OPT_TARGET_ENABLE_QUAD_FLOAT:=no}
 __OPT_TARGET_ENABLE_ADDITIONAL_ABIS=${__OPT_TARGET_ENABLE_ADDITIONAL_ABIS:=no}
 
+__OPT_BUILD_BINUTILS=${__OPT_BUILD_BINUTILS:=yes}
+__OPT_BUILD_GCC=${__OPT_BUILD_GCC:=yes}
+__OPT_BUILD_NEWLIB=${__OPT_BUILD_NEWLIB:=yes}
+__OPT_BUILD_UCLIBCPP=${__OPT_BUILD_UCLIBCPP:=yes}
+__OPT_BUILD_GDB=${__OPT_BUILD_GDB:=yes}
+__OPT_BUILD_OPENOCD=${__OPT_BUILD_OPENOCD:=yes}
+
 __OPT_BUILD_MULTICORE=${__OPT_BUILD_MULTICORE:=-j$(nproc)}
 __OPT_BUILD_HACKY_MULTICORE=${__OPT_BUILD_HACKY_MULTICORE:=yes}
 __OPT_INSTALL_DEPENDENCIES=${__OPT_INSTALL_DEPENDENCIES:=yes}
@@ -285,12 +292,24 @@ function git_checkout() {
 }
 
 if [ ! -f $__SRC_DIR/.installed-sources ]; then
-  git_checkout $__SRC_DIR/'src-binutils' $__VERSION_BINUTILS 'git://sourceware.org/git/binutils-gdb.git'
-  git_checkout $__SRC_DIR/'src-gcc' $__VERSION_GCC 'git://gcc.gnu.org/git/gcc.git'
-  git_checkout $__SRC_DIR/'src-newlib' $__VERSION_NEWLIB 'git://sourceware.org/git/newlib-cygwin.git'
-  git_checkout $__SRC_DIR/'src-uclibc++' $__VERSION_UCLIBCPP 'git://git.busybox.net/uClibc++'
-  git_checkout $__SRC_DIR/'src-gdb' $__VERSION_GDB 'git://sourceware.org/git/binutils-gdb.git'
-  git_checkout $__SRC_DIR/'src-openocd' $__VERSION_OPENOCD 'git://git.code.sf.net/p/openocd/code'
+  if [ "yes" == $__OPT_BUILD_BINUTILS ]; then
+    git_checkout $__SRC_DIR/'src-binutils' $__VERSION_BINUTILS 'git://sourceware.org/git/binutils-gdb.git'
+  fi
+  if [ "yes" == $__OPT_BUILD_GCC ]; then
+    git_checkout $__SRC_DIR/'src-gcc' $__VERSION_GCC 'git://gcc.gnu.org/git/gcc.git'
+  fi
+  if [ "yes" == $__OPT_BUILD_NEWLIB ]; then
+    git_checkout $__SRC_DIR/'src-newlib' $__VERSION_NEWLIB 'git://sourceware.org/git/newlib-cygwin.git'
+  fi
+  if [ "yes" == $__OPT_BUILD_UCLIBCPP ]; then
+    git_checkout $__SRC_DIR/'src-uclibc++' $__VERSION_UCLIBCPP 'git://git.busybox.net/uClibc++'
+  fi
+  if [ "yes" == $__OPT_BUILD_GDB ]; then
+    git_checkout $__SRC_DIR/'src-gdb' $__VERSION_GDB 'git://sourceware.org/git/binutils-gdb.git'
+  fi
+  if [ "yes" == $__OPT_BUILD_OPENOCD ]; then
+    git_checkout $__SRC_DIR/'src-openocd' $__VERSION_OPENOCD 'git://git.code.sf.net/p/openocd/code'
+  fi
 fi
 touch $__SRC_DIR/.installed-sources
 
@@ -298,55 +317,59 @@ touch $__SRC_DIR/.installed-sources
 # binutils
 # --------------------------------------------------------------------------------------------------------------------
 
-cd $__BUILD_DIR
-if [ ! -f .built-binutils ]; then
-  rm -rf build-binutils || true
-  mkdir build-binutils && cd build-binutils
-  $__SRC_DIR/src-binutils/configure \
-    --target=${__OPT_TARGET_ARCH} \
-    --prefix=${__OPT_TARGET_PATH} \
-    --with-arch=${__OPT_TARGET_MARCH_FULL} \
-    --program-prefix=${__OPT_TARGET_PREFIX} \
-    --enable-lto --disable-nls --disable-wchar_t \
-    --enable-initfini-array --without-gdb
+if [ "yes" == $__OPT_BUILD_BINUTILS ]; then
+  cd $__BUILD_DIR
+  if [ ! -f .built-binutils ]; then
+    rm -rf build-binutils || true
+    mkdir build-binutils && cd build-binutils
+    $__SRC_DIR/src-binutils/configure \
+      --target=${__OPT_TARGET_ARCH} \
+      --prefix=${__OPT_TARGET_PATH} \
+      --with-arch=${__OPT_TARGET_MARCH_FULL} \
+      --program-prefix=${__OPT_TARGET_PREFIX} \
+      --enable-lto --disable-nls --disable-wchar_t \
+      --enable-initfini-array --without-gdb
 
-  make all ${__OPT_BUILD_MULTICORE}
-  make install ${__OPT_BUILD_MULTICORE}
+    make all ${__OPT_BUILD_MULTICORE}
+    make install ${__OPT_BUILD_MULTICORE}
+  fi
+  touch $__BUILD_DIR/.built-binutils
 fi
-touch $__BUILD_DIR/.built-binutils
 
 # --------------------------------------------------------------------------------------------------------------------
 # gcc
 # --------------------------------------------------------------------------------------------------------------------
 
-cd $__BUILD_DIR
-if [ ! -f .built-gcc ]; then
-  __SRC_GCC_MULTILIB=$__SRC_DIR/src-gcc/gcc/config/riscv
-  if [ ! -f $__SRC_GCC_MULTILIB/t-elf-multilib64 ]; then
-    mv $__SRC_GCC_MULTILIB/t-elf-multilib $__SRC_GCC_MULTILIB/t-elf-multilib64
+if [ "yes" == $__OPT_BUILD_GCC ]; then
+  cd $__BUILD_DIR
+  if [ ! -f .built-gcc ]; then
+    __SRC_GCC_MULTILIB=$__SRC_DIR/src-gcc/gcc/config/riscv
+    if [ ! -f $__SRC_GCC_MULTILIB/t-elf-multilib64 ]; then
+      mv $__SRC_GCC_MULTILIB/t-elf-multilib $__SRC_GCC_MULTILIB/t-elf-multilib64
+    fi
+
+    # Generate new multilib list
+    python3 $__SRC_GCC_MULTILIB/multilib-generator ${__OPT_TARGET_MULTILIB} \
+      > $__SRC_GCC_MULTILIB/t-elf-multilib
+
+    rm -rf build-gcc || true
+    mkdir build-gcc && cd build-gcc
+    $__SRC_DIR/src-gcc/configure \
+      --target=${__OPT_TARGET_ARCH} \
+      --prefix=${__OPT_TARGET_PATH} \
+      --program-prefix=${__OPT_TARGET_PREFIX} \
+      --without-headers --enable-languages=c --with-newlib \
+      --with-arch=${__OPT_TARGET_MARCH} --with-abi=${__OPT_TARGET_MABI} \
+      --enable-lto --enable-multilib --enable-initfini-array \
+      --disable-nls --disable-wchar_t --disable-threads --disable-libstdcxx \
+      --disable-shared --disable-libssp \
+      --with-system-zlib --with-gnu-as --with-gnu-ld
+
+    make all-gcc ${__OPT_BUILD_MULTICORE}
+    make install-gcc ${__OPT_BUILD_MULTICORE}
   fi
-
-  # Generate new multilib list
-  python3 $__SRC_GCC_MULTILIB/multilib-generator ${__OPT_TARGET_MULTILIB} \
-    > $__SRC_GCC_MULTILIB/t-elf-multilib
-
-  rm -rf build-gcc || true
-  mkdir build-gcc && cd build-gcc
-  $__SRC_DIR/src-gcc/configure \
-    --target=${__OPT_TARGET_ARCH} \
-    --prefix=${__OPT_TARGET_PATH} \
-    --program-prefix=${__OPT_TARGET_PREFIX} \
-    --without-headers --enable-languages=c --with-newlib \
-    --with-arch=${__OPT_TARGET_MARCH} --with-abi=${__OPT_TARGET_MABI} \
-    --enable-lto --enable-multilib --enable-initfini-array \
-    --disable-nls --disable-wchar_t --disable-threads --disable-libstdcxx \
-    --disable-shared --disable-libssp \
-    --with-system-zlib --with-gnu-as --with-gnu-ld
-
-  make all-gcc ${__OPT_BUILD_MULTICORE}
-  make install-gcc ${__OPT_BUILD_MULTICORE}
+  touch $__BUILD_DIR/.built-gcc
 fi
-touch $__BUILD_DIR/.built-gcc
 
 # --------------------------------------------------------------------------------------------------------------------
 # checking gcc
@@ -499,42 +522,45 @@ EOF
   fi
 }
 
-cd $__BUILD_DIR
-if [ ! -f .checked-gcc ]; then
-  rm -rf check-gcc || true
-  mkdir check-gcc && cd check-gcc
+if [ "yes" == $__OPT_BUILD_GCC ]; then
+  cd $__BUILD_DIR
+  if [ ! -f .checked-gcc ]; then
+    rm -rf check-gcc || true
+    mkdir check-gcc && cd check-gcc
 
-  check_gcc $__OPT_TARGET_MARCH $__OPT_TARGET_MABI "no"
+    check_gcc $__OPT_TARGET_MARCH $__OPT_TARGET_MABI "no"
 
-  for type in ${__OPT_TARGET_MULTILIB}; do
-    march=`echo $type | sed 's/\(.*\)-\(.*\)--/\1/'`
-    mabi=`echo $type | sed 's/\(.*\)-\(.*\)--/\2/'`
+    for type in ${__OPT_TARGET_MULTILIB}; do
+      march=`echo $type | sed 's/\(.*\)-\(.*\)--/\1/'`
+      mabi=`echo $type | sed 's/\(.*\)-\(.*\)--/\2/'`
 
-    check_gcc $march $mabi "no"
-  done
+      check_gcc $march $mabi "no"
+    done
+  fi
+  touch $__BUILD_DIR/.checked-gcc
 fi
-touch $__BUILD_DIR/.checked-gcc
 
 # --------------------------------------------------------------------------------------------------------------------
 # newlib (libc)
 # --------------------------------------------------------------------------------------------------------------------
 
-cd $__BUILD_DIR
-if [ ! -f .built-newlib ]; then
-  rm -rf build-newlib || true
-  mkdir build-newlib && cd build-newlib
-  $__SRC_DIR/src-newlib/configure \
-    --target=${__OPT_TARGET_ARCH} \
-    --with-arch=${__OPT_TARGET_MARCH} --with-abi=${__OPT_TARGET_MABI} \
-    --prefix=${__OPT_TARGET_PATH} \
-    --enable-multilib \
-    --disable-newlib-supplied-syscalls --enable-newlib-nano-malloc \
-    --enable-newlib-global-atexit --enable-newlib-register-fini \
-    --disable-newlib-multithread
-
-  if [ "yes" == $__OPT_BUILD_HACKY_MULTICORE ]; then
-    # Patch newlib-sources/config-ml.in to use parallel for-loops for configuration and compilation
-    patch --forward --force $__SRC_DIR/src-newlib/config-ml.in <<"EOF" || true
+if [ "yes" == $__OPT_BUILD_NEWLIB ]; then
+  cd $__BUILD_DIR
+  if [ ! -f .built-newlib ]; then
+    rm -rf build-newlib || true
+    mkdir build-newlib && cd build-newlib
+    $__SRC_DIR/src-newlib/configure \
+      --target=${__OPT_TARGET_ARCH} \
+      --with-arch=${__OPT_TARGET_MARCH} --with-abi=${__OPT_TARGET_MABI} \
+      --prefix=${__OPT_TARGET_PATH} \
+      --enable-multilib \
+      --disable-newlib-supplied-syscalls --enable-newlib-nano-malloc \
+      --enable-newlib-global-atexit --enable-newlib-register-fini \
+      --disable-newlib-multithread
+  
+    if [ "yes" == $__OPT_BUILD_HACKY_MULTICORE ]; then
+      # Patch newlib-sources/config-ml.in to use parallel for-loops for configuration and compilation
+      patch --forward --force $__SRC_DIR/src-newlib/config-ml.in <<"EOF" || true
 --- <config-ml.in>
 +++ <config-ml.in>
 @@ -503,7 +503,7 @@
@@ -587,63 +613,74 @@ if [ ! -f .built-newlib ]; then
    cd "${ml_origdir}"
  fi
 EOF
+    fi
+  
+    make all ${__OPT_BUILD_MULTICORE}
+    make install ${__OPT_BUILD_MULTICORE}
   fi
-
-  make all ${__OPT_BUILD_MULTICORE}
-  make install ${__OPT_BUILD_MULTICORE}
+  touch $__BUILD_DIR/.built-newlib
 fi
-touch $__BUILD_DIR/.built-newlib
 
 # --------------------------------------------------------------------------------------------------------------------
 # gcc stage 2
 # --------------------------------------------------------------------------------------------------------------------
 
-cd $__BUILD_DIR
-if [ ! -f .built-gcc-stage2 ]; then
-  __SRC_GCC_MULTILIB=$__SRC_DIR/src-gcc/gcc/config/riscv
-  if [ ! -f $__SRC_GCC_MULTILIB/t-elf-multilib64 ]; then
-    mv $__SRC_GCC_MULTILIB/t-elf-multilib $__SRC_GCC_MULTILIB/t-elf-multilib64
-    $__SRC_GCC_MULTILIB/multilib-generator ${__OPT_TARGET_MULTILIB} \
-      > $__SRC_GCC_MULTILIB/t-elf-multilib
+if [ "yes" == $__OPT_BUILD_GCC ]; then
+  cd $__BUILD_DIR
+  if [ ! -f .built-gcc-stage2 ]; then
+    __SRC_GCC_MULTILIB=$__SRC_DIR/src-gcc/gcc/config/riscv
+    if [ ! -f $__SRC_GCC_MULTILIB/t-elf-multilib64 ]; then
+      mv $__SRC_GCC_MULTILIB/t-elf-multilib $__SRC_GCC_MULTILIB/t-elf-multilib64
+      $__SRC_GCC_MULTILIB/multilib-generator ${__OPT_TARGET_MULTILIB} \
+        > $__SRC_GCC_MULTILIB/t-elf-multilib
+    fi
+
+    if [ "yes" == $__OPT_BUILD_NEWLIB ]; then
+      __WITH_NEWLIB="--with-newlib"
+    else
+      __WITH_NEWLIB=""
+    fi
+
+    rm -rf build-gcc-stage2 || true
+    mkdir build-gcc-stage2 && cd build-gcc-stage2
+    $__SRC_DIR/src-gcc/configure \
+      --target=${__OPT_TARGET_ARCH} \
+      --prefix=${__OPT_TARGET_PATH} \
+      --program-prefix=${__OPT_TARGET_PREFIX} \
+      --without-headers --enable-languages=c,c++ ${__WITH_NEWLIB} \
+      --with-arch=${__OPT_TARGET_MARCH} --with-abi=${__OPT_TARGET_MABI} \
+      --enable-lto --enable-multilib --enable-initfini-array \
+      --disable-nls --disable-wchar_t --disable-threads --disable-libstdcxx \
+      --disable-shared --disable-libssp \
+      --with-system-zlib --with-gnu-as --with-gnu-ld --enable-gold
+
+    make all ${__OPT_BUILD_MULTICORE}
+    make install ${__OPT_BUILD_MULTICORE}
   fi
-
-  rm -rf build-gcc-stage2 || true
-  mkdir build-gcc-stage2 && cd build-gcc-stage2
-  $__SRC_DIR/src-gcc/configure \
-    --target=${__OPT_TARGET_ARCH} \
-    --prefix=${__OPT_TARGET_PATH} \
-    --program-prefix=${__OPT_TARGET_PREFIX} \
-    --without-headers --enable-languages=c,c++ --with-newlib \
-    --with-arch=${__OPT_TARGET_MARCH} --with-abi=${__OPT_TARGET_MABI} \
-    --enable-lto --enable-multilib --enable-initfini-array \
-    --disable-nls --disable-wchar_t --disable-threads --disable-libstdcxx \
-    --disable-shared --disable-libssp \
-    --with-system-zlib --with-gnu-as --with-gnu-ld --enable-gold
-
-  make all ${__OPT_BUILD_MULTICORE}
-  make install ${__OPT_BUILD_MULTICORE}
+  touch $__BUILD_DIR/.built-gcc-stage2
 fi
-touch $__BUILD_DIR/.built-gcc-stage2
 
 # --------------------------------------------------------------------------------------------------------------------
 # checking gcc of stage 2
 # --------------------------------------------------------------------------------------------------------------------
 
-cd $__BUILD_DIR
-if [ ! -f .checked-gcc-stage-2 ]; then
-  rm -rf check-gcc-stage-2 || true
-  mkdir check-gcc-stage-2 && cd check-gcc-stage-2
+if [ "yes" == $__OPT_BUILD_NEWLIB ]; then
+  cd $__BUILD_DIR
+  if [ ! -f .checked-gcc-stage-2 ]; then
+    rm -rf check-gcc-stage-2 || true
+    mkdir check-gcc-stage-2 && cd check-gcc-stage-2
 
-  check_gcc $__OPT_TARGET_MARCH $__OPT_TARGET_MABI "yes"
+    check_gcc $__OPT_TARGET_MARCH $__OPT_TARGET_MABI "yes"
 
-  for type in ${__OPT_TARGET_MULTILIB}; do
-    march=`echo $type | sed 's/\(.*\)-\(.*\)--/\1/'`
-    mabi=`echo $type | sed 's/\(.*\)-\(.*\)--/\2/'`
+    for type in ${__OPT_TARGET_MULTILIB}; do
+      march=`echo $type | sed 's/\(.*\)-\(.*\)--/\1/'`
+      mabi=`echo $type | sed 's/\(.*\)-\(.*\)--/\2/'`
 
-    check_gcc $march $mabi "yes"
-  done
+      check_gcc $march $mabi "yes"
+    done
+  fi
+  touch $__BUILD_DIR/.checked-gcc-stage-2
 fi
-touch $__BUILD_DIR/.checked-gcc-stage-2
 
 # --------------------------------------------------------------------------------------------------------------------
 # uclibc++ (libcpp)
@@ -702,79 +739,95 @@ function build_uclibcpp() {
   make distclean
 }
 
+if [ "yes" == $__OPT_BUILD_UCLIBCPP ]; then
 cd $__BUILD_DIR
-if [ ! -f .built-uclibc++ ]; then
-  cd $__SRC_DIR/src-uclibc++
-  git reset --hard HEAD
-  git clean -dfx
+  if [ ! -f .built-uclibc++ ]; then
+    cd $__SRC_DIR/src-uclibc++
+    git reset --hard HEAD
+    git clean -dfx
 
-  # Remove exception handling
-  rm ./src/eh_globals.cpp | true
-  rm ./src/eh_alloc.cpp | true
-  rm ./include/unwind-cxx.h | true
+    # Remove exception handling
+    rm ./src/eh_globals.cpp | true
+    rm ./src/eh_alloc.cpp | true
+    rm ./include/unwind-cxx.h | true
 
-  # Build specific target architectures / ABIs
-  for type in ${__OPT_TARGET_MULTILIB}; do
-    march=`echo $type | sed 's/\(.*\)-\(.*\)--/\1/'`
-    mabi=`echo $type | sed 's/\(.*\)-\(.*\)--/\2/'`
+    # Build specific target architectures / ABIs
+    for type in ${__OPT_TARGET_MULTILIB}; do
+      march=`echo $type | sed 's/\(.*\)-\(.*\)--/\1/'`
+      mabi=`echo $type | sed 's/\(.*\)-\(.*\)--/\2/'`
+
+      if [ "yes" == $__OPT_BUILD_HACKY_MULTICORE ]; then
+        __BUILD_UCLIBCPP_DIR=$__BUILD_DIR/build-uclibc++/$type
+        mkdir -p $__BUILD_UCLIBCPP_DIR && cp -r . $__BUILD_UCLIBCPP_DIR
+        (cd $__BUILD_UCLIBCPP_DIR && build_uclibcpp $march $mabi) &
+      else
+        build_uclibcpp $march $mabi
+      fi
+    done;
 
     if [ "yes" == $__OPT_BUILD_HACKY_MULTICORE ]; then
-      __BUILD_UCLIBCPP_DIR=$__BUILD_DIR/build-uclibc++/$type
-      mkdir -p $__BUILD_UCLIBCPP_DIR && cp -r . $__BUILD_UCLIBCPP_DIR
-      (cd $__BUILD_UCLIBCPP_DIR && build_uclibcpp $march $mabi) &
-    else
-      build_uclibcpp $march $mabi
+      # Wait for all build workers to finish
+      wait < <(jobs -p)
     fi
-  done;
 
-  if [ "yes" == $__OPT_BUILD_HACKY_MULTICORE ]; then
-    # Wait for all build workers to finish
-    wait < <(jobs -p)
+    # Build default version last
+    build_uclibcpp '' ''
+
+    # Rename files to lower case
+    cd ${__OPT_TARGET_PATH}/${__OPT_TARGET_ARCH}/lib
+    for file in `find . -name libuClibc++.a`; do
+      mv $file $(dirname $file)/`echo $(basename $file) | tr [:upper:] [:lower:]`
+    done;
   fi
-
-  # Build default version last
-  build_uclibcpp '' ''
-
-  # Rename files to lower case
-  cd ${__OPT_TARGET_PATH}/${__OPT_TARGET_ARCH}/lib
-  for file in `find . -name libuClibc++.a`; do
-    mv $file $(dirname $file)/`echo $(basename $file) | tr [:upper:] [:lower:]`
-  done;
+  touch $__BUILD_DIR/.built-uclibc++ | true
 fi
-touch $__BUILD_DIR/.built-uclibc++ | true
 
-cd $__BUILD_DIR
-if [ ! -f .built-gdb ]; then
-  rm -rf build-gdb || true
-  mkdir build-gdb && cd build-gdb
-  $__SRC_DIR/src-gdb/configure \
-    --target=${__OPT_TARGET_ARCH} \
-    --prefix=${__OPT_TARGET_PATH} \
-    --program-prefix=${__OPT_TARGET_PREFIX}
+# --------------------------------------------------------------------------------------------------------------------
+# GDB
+# --------------------------------------------------------------------------------------------------------------------
 
-  make all-gdb all-gdbserver ${__OPT_BUILD_MULTICORE}
-  make install-gdb install-gdbserver ${__OPT_BUILD_MULTICORE}
-fi
-touch $__BUILD_DIR/.built-gdb
-
-cd $__BUILD_DIR
-if [ ! -f .built-openocd ]; then
-  cd $__SRC_DIR/src-openocd
-  ./bootstrap
-  git submodule update --init
+if [ "yes" == $__OPT_BUILD_GDB ]; then
   cd $__BUILD_DIR
+  if [ ! -f .built-gdb ]; then
+    rm -rf build-gdb || true
+    mkdir build-gdb && cd build-gdb
+    $__SRC_DIR/src-gdb/configure \
+      --target=${__OPT_TARGET_ARCH} \
+      --prefix=${__OPT_TARGET_PATH} \
+      --program-prefix=${__OPT_TARGET_PREFIX}
 
-  rm -rf build-openocd || true
-  mkdir build-openocd && cd build-openocd
-  $__SRC_DIR/src-openocd/configure \
-    --target=${__OPT_TARGET_ARCH} \
-    --prefix=${__OPT_TARGET_PATH} \
-    --program-prefix=${__OPT_TARGET_PREFIX} \
-    --enable-internal-jimtcl
-  make ${__OPT_BUILD_MULTICORE}
-  make install ${__OPT_BUILD_MULTICORE}
+    make all-gdb all-gdbserver ${__OPT_BUILD_MULTICORE}
+    make install-gdb install-gdbserver ${__OPT_BUILD_MULTICORE}
+  fi
+  touch $__BUILD_DIR/.built-gdb
 fi
-touch $__BUILD_DIR/.built-openocd
+
+# --------------------------------------------------------------------------------------------------------------------
+# Open OCD
+# --------------------------------------------------------------------------------------------------------------------
+
+if [ "yes" == $__OPT_BUILD_GDB ]; then
+  cd $__BUILD_DIR
+  if [ ! -f .built-openocd ]; then
+    cd $__SRC_DIR/src-openocd
+    ./bootstrap
+    git submodule update --init
+    cd $__BUILD_DIR
+
+    rm -rf build-openocd || true
+    mkdir build-openocd && cd build-openocd
+    $__SRC_DIR/src-openocd/configure \
+      --target=${__OPT_TARGET_ARCH} \
+      --prefix=${__OPT_TARGET_PATH} \
+      --program-prefix=${__OPT_TARGET_PREFIX} \
+      --enable-internal-jimtcl
+    make ${__OPT_BUILD_MULTICORE}
+    make install ${__OPT_BUILD_MULTICORE}
+  fi
+  touch $__BUILD_DIR/.built-openocd
+fi
+
+# --------------------------------------------------------------------------------------------------------------------
 
 cd $__BUILD_DIR
 echo "Done"

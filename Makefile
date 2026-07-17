@@ -17,6 +17,13 @@ export __OPT_TARGET_ENABLE_DOUBLE_FLOAT=no
 export __OPT_TARGET_ENABLE_QUAD_FLOAT=no
 export __OPT_TARGET_ENABLE_ADDITIONAL_ABIS=no
 
+export __OPT_BUILD_BINUTILS=yes
+export __OPT_BUILD_GCC=yes
+export __OPT_BUILD_NEWLIB=yes
+export __OPT_BUILD_UCLIBCPP=yes
+export __OPT_BUILD_GDB=yes
+export __OPT_BUILD_OPENOCD=yes
+
 export __OPT_BUILD_MULTICORE=-j$(shell nproc)
 export __OPT_BUILD_HACKY_MULTICORE=yes
 

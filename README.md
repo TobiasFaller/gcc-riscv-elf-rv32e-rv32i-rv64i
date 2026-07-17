@@ -8,25 +8,31 @@ The configuration does not support multi-threading and uses init_array and fini_
 Toolchain Configuration
 -----------------------
 
-| Option                              | Description                                         | Default Value                |
-| ----------------------------------- | --------------------------------------------------- | ---------------------------- |
-| __OPT_TARGET_ARCH                   | Target architecture triplet                         | riscv-unknown-elf            |
-| __OPT_TARGET_MARCH                  | Default target architecture                         | RV64GC                       |
-| __OPT_TARGET_MABI                   | Default target ABI                                  | ILP64D                       |
-| __OPT_TARGET_MARCH_FULL             | Maximum target architecture                         | RV64GC                       |
-| __OPT_TARGET_ENABLE_RISCV32E        | Enable RV32E variants                               | yes                          |
-| __OPT_TARGET_ENABLE_RISCV32I        | Enable RV32I variants                               | yes                          |
-| __OPT_TARGET_ENABLE_RISCV64G        | Enable RV64G variants                               | yes                          |
-| __OPT_TARGET_ENABLE_RISCV128G       | Enable RV128G variants                              | no                           |
-| __OPT_TARGET_ENABLE_SINGLE_FLOAT    | Enable single-precision floating-point support      | yes                          |
-| __OPT_TARGET_ENABLE_DOUBLE_FLOAT    | Enable double-precision floating-point support      | yes                          |
-| __OPT_TARGET_ENABLE_QUAD_FLOAT      | Enable quad-precision floating-point support        | no                           |
-| __OPT_TARGET_ENABLE_ADDITIONAL_ABIS | Enable additional uncommon ABIs                     | no                           |
-| __OPT_TARGET_PATH                   | Installation directory                              | /usr/local/riscv-unknown-elf |
-| __OPT_TARGET_PREFIX                 | Program name prefix                                 | riscv-unknown-elf-           |
-| __OPT_BUILD_MULTICORE               | Maximum parallel job count for Makefile             | -j$(nproc)                   |
-| __OPT_BUILD_HACKY_MULTICORE         | Patches build files to enable multi-threaded builds | yes (might break the build)  |
-| __OPT_INSTALL_DEPENDENCIES          | Install dependencies required for build             | yes                          |
+| Option                              | Description                                            | Default Value                |
+| ----------------------------------- | ------------------------------------------------------ | ---------------------------- |
+| __OPT_TARGET_ARCH                   | Target architecture triplet                            | riscv-unknown-elf            |
+| __OPT_TARGET_MARCH                  | Default target architecture                            | RV64GC                       |
+| __OPT_TARGET_MABI                   | Default target ABI                                     | ILP64D                       |
+| __OPT_TARGET_MARCH_FULL             | Maximum target architecture                            | RV64GC                       |
+| __OPT_TARGET_ENABLE_RISCV32E        | Enable RV32E variants                                  | yes                          |
+| __OPT_TARGET_ENABLE_RISCV32I        | Enable RV32I variants                                  | yes                          |
+| __OPT_TARGET_ENABLE_RISCV64G        | Enable RV64G variants                                  | yes                          |
+| __OPT_TARGET_ENABLE_RISCV128G       | Enable RV128G variants                                 | no                           |
+| __OPT_TARGET_ENABLE_SINGLE_FLOAT    | Enable single-precision floating-point support         | yes                          |
+| __OPT_TARGET_ENABLE_DOUBLE_FLOAT    | Enable double-precision floating-point support         | yes                          |
+| __OPT_TARGET_ENABLE_QUAD_FLOAT      | Enable quad-precision floating-point support           | no                           |
+| __OPT_TARGET_ENABLE_ADDITIONAL_ABIS | Enable additional uncommon ABIs                        | no                           |
+| __OPT_TARGET_PATH                   | Installation directory                                 | /usr/local/riscv-unknown-elf |
+| __OPT_TARGET_PREFIX                 | Program name prefix                                    | riscv-unknown-elf-           |
+| __OPT_BUILD_BINUTILS                | Build GNU Binutils (Binutils)                          | yes                          |
+| __OPT_BUILD_GCC                     | Build GNU Compiler Collection (GCC), requires Binutils | yes                          |
+| __OPT_BUILD_GDB                     | Build GNU Project Debugger (GDB)                       | yes                          |
+| __OPT_BUILD_OPENOCD                 | Build Open On-Chip Debugger (OpenOCD)                  | yes                          |
+| __OPT_BUILD_NEWLIB                  | Build Newlib C Library (Newlib), requires GCC          | yes                          |
+| __OPT_BUILD_UCLIBCPP                | Build uCLibc++, requires Newlib                        | yes                          |
+| __OPT_BUILD_MULTICORE               | Maximum parallel job count for Makefile                | -j$(nproc)                   |
+| __OPT_BUILD_HACKY_MULTICORE         | Patches build files to enable multi-threaded builds    | yes (might break the build)  |
+| __OPT_INSTALL_DEPENDENCIES          | Install dependencies required for build                | yes                          |
 
 Instruction Sets:
 
@@ -48,14 +54,14 @@ The following configuration sets can be built independently or together in one t
 Toolchain Version
 -----------------
 
-| Software / Library                | Version | Date             | Homepage                                       | Git Repository                                      |
-| --------------------------------- | ------- | ---------------- | ---------------------------------------------- | --------------------------------------------------- |
-| The GNU Binutils (Binutils)       | 2.45    | 2025-07-27 09:56 | [Link](https://www.gnu.org/software/binutils/) | [Link](https://sourceware.org/git/binutils-gdb.git)  |
-| The GNU Project Debugger (GDB)    | 16.3    | 2025-04-20 10:22 | [Link](https://www.gnu.org/software/gdb/)      | [Link](https://sourceware.org/git/binutils-gdb.git)  |
-| The GNU Compiler Collection (GCC) | 15.1.0  | 2025-04-25 08:21 | [Link](https://gcc.gnu.org/)                   | [Link](https://gcc.gnu.org/git/gcc.git)              |
-| Newlib C Library (Newlib)         | 4.5.0   | 2025-01-01 20:35 | [Link](https://sourceware.org/newlib/)         | [Link](https://sourceware.org/git/newlib-cygwin.git) |
-| uCLibc++                          | 0.2.5   | 2019-04-06 17:20 | [Link](https://cxx.uclibc.org/)                | [Link](https://git.busybox.net/uClibc++)             |
-| Open On-Chip Debugger (OpenOCD)   | 0.12.0  | 2023-01-14 10:14 | [Link](https://openocd.org/)                   | [Link](https://git.code.sf.net/p/openocd/code)      |
+| Software / Library              | Version | Date             | Homepage                                       | Git Repository                                       |
+| ------------------------------- | ------- | ---------------- | ---------------------------------------------- | ---------------------------------------------------- |
+| GNU Binutils (Binutils)         | 2.45    | 2025-07-27 09:56 | [Link](https://www.gnu.org/software/binutils/) | [Link](https://sourceware.org/git/binutils-gdb.git)  |
+| GNU Project Debugger (GDB)      | 16.3    | 2025-04-20 10:22 | [Link](https://www.gnu.org/software/gdb/)      | [Link](https://sourceware.org/git/binutils-gdb.git)  |
+| GNU Compiler Collection (GCC)   | 15.1.0  | 2025-04-25 08:21 | [Link](https://gcc.gnu.org/)                   | [Link](https://gcc.gnu.org/git/gcc.git)              |
+| Open On-Chip Debugger (OpenOCD) | 0.12.0  | 2023-01-14 10:14 | [Link](https://openocd.org/)                   | [Link](https://git.code.sf.net/p/openocd/code)       |
+| Newlib C Library (Newlib)       | 4.5.0   | 2025-01-01 20:35 | [Link](https://sourceware.org/newlib/)         | [Link](https://sourceware.org/git/newlib-cygwin.git) |
+| uCLibc++                        | 0.2.5   | 2019-04-06 17:20 | [Link](https://cxx.uclibc.org/)                | [Link](https://git.busybox.net/uClibc++)             |
 
 Requirements
 ------------
